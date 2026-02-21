@@ -520,10 +520,14 @@ function calculate() {
   const mb = calcMegbizas(netto, munkaltadiRat, munkavTBRat, isTartos);
   const e = calcEfo(netto, napok, efoKey);
 
+  const EFO_MAX_NAPI = 29700;
+  const efoMaxNetto = EFO_MAX_NAPI * napok;
+  const efoNemLehetseges = netto > efoMaxNetto;
+
   const costs = [
     { key: 'munkaber', label: 'Munkabér', cost: m.munkaltOssz },
     { key: 'megbizas', label: 'Megbízás', cost: mb.munkaltOssz },
-    { key: 'efo',      label: 'EFO',      cost: e.munkaltOssz },
+    ...(!efoNemLehetseges ? [{ key: 'efo', label: 'EFO', cost: e.munkaltOssz }] : []),
   ].sort((a, b) => a.cost - b.cost);
   const winner = costs[0].key;
 
@@ -595,6 +599,20 @@ function calculate() {
 
   // EFO kártya
   document.getElementById('card-efo').classList.toggle('winner', winner === 'efo');
+
+  if (efoNemLehetseges) {
+    document.getElementById('card-efo').classList.remove('winner');
+    document.getElementById('efo-metrics').innerHTML = `
+      <div style="background:#FED7D7;border:1.5px solid #FC8181;border-radius:12px;padding:16px;text-align:center;margin-top:8px;">
+        <div style="font-size:22px;margin-bottom:8px;">🚫</div>
+        <div style="font-weight:700;color:#C53030;font-size:14px;margin-bottom:6px;">EFO nem alkalmazható</div>
+        <div style="font-size:12px;color:#742A2A;line-height:1.6;">
+          A kifizetett nettó összeg meghaladja a maximálisan<br>
+          kifizethető EFO bért:<br>
+          <strong>${napok} nap × 29 700 Ft = ${fmt(EFO_MAX_NAPI * napok)} Ft</strong>
+        </div>
+      </div>`;
+  } else {
   const napMaxWarn = e.napiKif > 29700;
 
   let efoRows = [
@@ -642,21 +660,22 @@ function calculate() {
         <span style="font-size:11px;opacity:0.8;">Nem képzett: max ${fmt(e.mentesitettOsszNemKepzett)} | Képzett: max ${fmt(e.mentesitettOsszKepzett)}</span>
       </div>`;
   }
+  } // end !efoNemLehetseges
 
   // Ajánlás
-  const megtakaritas = costs[1].cost - costs[0].cost;
+  const megtakaritas = costs.length > 1 ? costs[1].cost - costs[0].cost : 0;
   const recEl = document.getElementById('recommendation');
   const recData = {
-    munkaber: { icon: '💼', title: 'Munkabér a leggazdaságosabb', text: `Ennél a nettó szintnél és EFO típusnál (${e.label}) a hagyományos munkabér kerül a legkevesebbe a munkáltatónak.` },
-    megbizas: { icon: '📋', title: 'Megbízás a leggazdaságosabb', text: `A 10%-os költségátalánynak köszönhetően a megbízási forma most olcsóbb. Ha a megbízott nem biztosított (más főállása van), az SZJA-alap is tovább csökkenhet.` },
+    munkaber: { icon: '💼', title: 'Munkabér a leggazdaságosabb', text: `Ennél a nettó szintnél a hagyományos munkabér kerül a legkevesebbe a munkáltatónak.${efoNemLehetseges ? ' (EFO nem alkalmazható: a nettó meghaladja a ' + fmt(EFO_MAX_NAPI * napok) + ' Ft-os max. korlátot.)' : ''}` },
+    megbizas: { icon: '📋', title: 'Megbízás a leggazdaságosabb', text: `A 10%-os költségátalánynak köszönhetően a megbízási forma most olcsóbb.${efoNemLehetseges ? ' (EFO nem alkalmazható: a nettó meghaladja a ' + fmt(EFO_MAX_NAPI * napok) + ' Ft-os max. korlátot.)' : ''}` },
     efo:      { icon: '⚡', title: 'EFO a leggazdaságosabb', text: `${e.label} esetén a munkáltatói közteher ${fmt(e.kozteher)} (${napok} nap × ${fmtN(e.kozteherPerNap)} Ft). Ez a legolcsóbb, de max 15 nap/hó és 120 nap/év korlátot figyeljen!` },
   }[winner];
   recEl.className = 'recommendation best-' + winner;
   recEl.innerHTML = `<div class="rec-icon">${recData.icon}</div><div>
     <div class="rec-title">${recData.title}</div>
     <div class="rec-text">${recData.text}<br><br>
-      <strong>Megtakarítás a 2. legolcsóbbhoz képest: ${fmt(megtakaritas)}/hó</strong><br>
-      Sorrend: ${costs.map((c,i) => `${i+1}. ${c.label} (${fmt(c.cost)})`).join(' → ')}
+      ${costs.length > 1 ? '<strong>Megtakarítás a 2. legolcsóbbhoz képest: ' + fmt(megtakaritas) + '/hó</strong><br>' : ''}
+      Sorrend: ${costs.map((c,i) => `${i+1}. ${c.label} (${fmt(c.cost)})`).join(' → ')}${efoNemLehetseges ? ' · <span style="color:#C53030">EFO: kizárva</span>' : ''}
     </div></div>`;
 
   // Grafikon
@@ -680,22 +699,23 @@ function calculate() {
   const megbizasNemBiztInfo = mb.nemBiztositott
     ? [{ l: 'ℹ️ Megbízás: nem biztosított (díj < ' + fmt(JARULEK_ALAP_MIN) + ')', m: null, mb: null, e: null, info2: true }]
     : [];
+  const eTabla = efoNemLehetseges ? null : e;
   const tableRows = [
-    { l: 'Bruttó bér / megbízási díj / nettó bér', m: m.brutto, mb: mb.brutto, e: e.netto },
+    { l: 'Bruttó bér / megbízási díj / nettó bér', m: m.brutto, mb: mb.brutto, e: eTabla ? eTabla.netto : null },
     ...jarulekAlapSorTabla,
     ...megbizasNemBiztInfo,
     { l: '— Munkavállaló SZJA',                    m: -m.szja,  mb: -mb.szja,  e: 0 },
     { l: tbLabel,                                   m: isNyugdijas ? 0 : -m.tb, mb: mbTbVal, e: 0 },
     { l: '= Nettó kézhez',                          m: netto,    mb: netto,     e: netto, t: true },
-    { l: '+ Munkáltatói járulék / EFO közteher',   m: m.munkaltAdo, mb: mbMunkaltVal, e: e.kozteher },
-    { l: '= Munkáltató összköltsége',               m: m.munkaltOssz, mb: mb.munkaltOssz, e: e.munkaltOssz, t: true },
+    { l: '+ Munkáltatói járulék / EFO közteher',   m: m.munkaltAdo, mb: mbMunkaltVal, e: eTabla ? eTabla.kozteher : null },
+    { l: '= Munkáltató összköltsége',               m: m.munkaltOssz, mb: mb.munkaltOssz, e: eTabla ? eTabla.munkaltOssz : null, t: true },
     { l: 'Hatékonyság (nettó / összkölts.)',        m: null, mb: null, e: null, pct: true,
-      mP: netto/m.munkaltOssz, mbP: netto/mb.munkaltOssz, eP: netto/e.munkaltOssz },
+      mP: netto/m.munkaltOssz, mbP: netto/mb.munkaltOssz, eP: eTabla ? netto/eTabla.munkaltOssz : null },
   ];
   document.getElementById('tableBody').innerHTML = tableRows.map(r => {
     const tc = r.t ? ' class="tr"' : r.info ? ' style="background:#FFF5F5"' : r.info2 ? ' style="background:#EBF8FF"' : '';
     const dc = r.t ? ' tr' : '';
-    if (r.pct) return `<tr${tc}><td class="rl${dc}">${r.l}</td><td class="num${dc}">${(r.mP*100).toFixed(1)}%</td><td class="num${dc}">${(r.mbP*100).toFixed(1)}%</td><td class="num${dc}">${(r.eP*100).toFixed(1)}%</td></tr>`;
+    if (r.pct) return `<tr${tc}><td class="rl${dc}">${r.l}</td><td class="num${dc}">${(r.mP*100).toFixed(1)}%</td><td class="num${dc}">${(r.mbP*100).toFixed(1)}%</td><td class="num${dc}">${r.eP !== null ? (r.eP*100).toFixed(1)+'%' : '<span style="color:#C53030;font-size:11px">N/A</span>'}</td></tr>`;
     const f = v => v === null ? '<span style="color:#718096;font-style:italic;font-size:11px">—</span>' : v < 0 ? `<span style="color:var(--accent)">– ${fmt(Math.abs(v))}</span>` : v === 0 ? '—' : fmt(v);
     return `<tr${tc}><td class="rl${dc}">${r.l}</td><td class="num${dc}" style="${r.info?'color:#C53030;font-weight:600':''}">${f(r.m)}</td><td class="num${dc}" style="${r.info2?'color:#2B6CB0;font-size:11px':''}colspan="${r.info2?3:1}">${f(r.mb)}</td><td class="num${dc}">${f(r.e)}</td></tr>`;
   }).join('');
