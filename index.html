@@ -323,27 +323,25 @@
         </div>
       </div>
       <div class="field" id="havioraWrapper" style="display:none">
-        <label>Hónap / munkaóra</label>
-        <div style="display:flex;gap:8px;">
-          <select id="honapSelect" onchange="honapValtozas()" style="flex:1;">
-            <option value="">— Hónap —</option>
-            <option value="168">Január (168 óra)</option>
-            <option value="160" selected>Február (160 óra)</option>
-            <option value="176">Március (176 óra)</option>
-            <option value="160">Április (160 óra)</option>
-            <option value="152">Május (152 óra)</option>
-            <option value="176">Június (176 óra)</option>
-            <option value="184">Július (184 óra)</option>
-            <option value="160">Augusztus (160 óra)</option>
-            <option value="176">Szeptember (176 óra)</option>
-            <option value="168">Október (168 óra)</option>
-            <option value="168">November (168 óra)</option>
-            <option value="176">December (176 óra)</option>
-          </select>
-          <div class="input-suffix" style="flex:0 0 90px;">
-            <input type="number" id="havioraInput" value="160" min="1" max="260" step="0.5" oninput="szamolOrabér()">
-            <span>óra</span>
-          </div>
+        <label>Hónap (2026-os munkaórák)</label>
+        <select id="honapSelect" onchange="honapValtozas()" style="width:100%;margin-bottom:6px;">
+          <option value="">— Hónap kiválasztása —</option>
+          <option value="168">Január — 168 óra</option>
+          <option value="160" selected>Február — 160 óra</option>
+          <option value="176">Március — 176 óra</option>
+          <option value="160">Április — 160 óra</option>
+          <option value="152">Május — 152 óra</option>
+          <option value="176">Június — 176 óra</option>
+          <option value="184">Július — 184 óra</option>
+          <option value="160">Augusztus — 160 óra</option>
+          <option value="176">Szeptember — 176 óra</option>
+          <option value="168">Október — 168 óra</option>
+          <option value="168">November — 168 óra</option>
+          <option value="176">December — 176 óra</option>
+        </select>
+        <div class="input-suffix">
+          <input type="number" id="havioraInput" value="160" min="1" max="260" step="0.5" oninput="szamolOrabér()">
+          <span>óra/hó</span>
         </div>
       </div>
       <div class="field">
@@ -716,10 +714,8 @@ function szamolOrabér() {
     let brutto = nettoHavi / (1 - munkavTBRat - TAX.szja);
     for (let i = 0; i < 50; i++) {
       const jarulek_alap = (munkavTBRat > 0 && brutto < jarulekAlapMinAranyos) ? jarulekAlapMinAranyos : brutto;
-      const szja = getSzjaKedvezmeny(brutto, jarulek_alap);
-      const tb = jarulek_alap * munkavTBRat;
-      const tbAtmenet = getCsaladiTbAtmenet(jarulek_alap);
-      const bruttoUj = nettoHavi + szja + Math.max(0, tb - tbAtmenet);
+      const sb = _szjaKedvezmenyAlap(jarulek_alap);
+      const bruttoUj = nettoHavi + sb.szja + Math.max(0, jarulek_alap * munkavTBRat - sb.csaladiTbAtmenet);
       if (Math.abs(bruttoUj - brutto) < 0.5) { brutto = bruttoUj; break; }
       brutto = bruttoUj;
     }
@@ -955,11 +951,10 @@ function calcMunkaber(netto, munkaltadiRat, munkavTBRat) {
   for (let i = 0; i < 50; i++) {
     jarulek_alap = (munkavTBRat > 0 && brutto < jarulekAlapMinAranyos) ? jarulekAlapMinAranyos : brutto;
     jarulekAlapMinAlkalmaz = (munkavTBRat > 0 && brutto < jarulekAlapMinAranyos);
-    szja = getSzjaKedvezmeny(brutto, jarulek_alap);
+    const sb = _szjaKedvezmenyAlap(jarulek_alap);
+    szja = sb.szja;
     tb = jarulek_alap * munkavTBRat;
-    // TB-be nyúlás
-    const tbAtmenet = getCsaladiTbAtmenet(jarulek_alap);
-    const tbTeny = Math.max(0, tb - tbAtmenet);
+    const tbTeny = Math.max(0, tb - sb.csaladiTbAtmenet);
     const bruttoUj = netto + szja + tbTeny;
     if (Math.abs(bruttoUj - brutto) < 0.5) { brutto = bruttoUj; break; }
     brutto = bruttoUj;
@@ -1359,7 +1354,7 @@ function calculate() {
   if (csaladiKdvOssz > 0 && m.tbAtmenet > 0) {
     document.getElementById('munkaber-metrics').innerHTML +=
       `<div style="background:#F0FFF4;border:1px solid #9AE6B4;border-radius:8px;padding:8px 12px;font-size:11.5px;color:#276749;margin-top:8px;">
-        👨‍👩‍👧 Adóvisszatérítés: a ${fmt(csaladiKdvOssz)} családi kedvezményből ${fmt(m.szja > 0 ? 0 : csaladiKdvOssz - (m.szja + csaladiKdvOssz))} SZJA-ból, ${fmt(m.tbAtmenet)} TB-ből kerül levonásra.
+        👨‍👩‍👧 Adóvisszatérítés: a ${fmt(csaladiKdvOssz)} Ft/hó családi kedvezményből ${fmt(m.tbAtmenet)} Ft TB-ből kerül levonásra.
       </div>`;
   }
 
