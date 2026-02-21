@@ -27,7 +27,8 @@
   header {
     background: var(--card);
     border-bottom: 2px solid var(--border);
-    padding: 36px 48px 32px; position: relative; overflow: hidden;
+    padding: 40px 48px 32px; position: relative; overflow: hidden;
+    text-align: center;
   }
   header::before {
     content: ''; position: absolute; right: -60px; top: -60px;
@@ -41,13 +42,14 @@
     display: inline-block; font-family: 'Fira Code', monospace;
     font-size: 11px; letter-spacing: 2px; text-transform: uppercase;
     color: var(--accent); border: 1px solid var(--accent);
-    padding: 4px 10px; border-radius: 6px; margin-bottom: 16px;
+    padding: 4px 12px; border-radius: 20px; margin-bottom: 18px;
   }
-  header h1 { font-family: 'Plus Jakarta Sans', sans-serif; font-size: clamp(22px, 4vw, 40px); font-weight: 800; line-height: 1.1; position: relative; color: var(--ink); }
-  header p { margin-top: 10px; font-size: 14px; color: var(--ink3); font-weight: 300; position: relative; }
+  header h1 { font-family: 'Plus Jakarta Sans', sans-serif; font-size: clamp(24px, 5vw, 44px); font-weight: 800; line-height: 1.15; position: relative; color: var(--ink); }
+  header p { margin-top: 12px; font-size: clamp(12px, 2vw, 14px); color: var(--ink3); font-weight: 400; position: relative; letter-spacing: 0.3px; }
   .header-credit {
-    margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border);
-    display: flex; align-items: center; gap: 10px; position: relative;
+    margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center; gap: 10px; position: relative;
+    flex-wrap: wrap;
   }
   .header-credit-logo {
     font-family: 'Plus Jakarta Sans', sans-serif; font-size: 15px; font-weight: 800;
@@ -57,6 +59,11 @@
   .header-credit-sep { color: var(--border); font-size: 18px; }
   .header-credit-name { font-size: 13px; color: var(--ink2); font-weight: 400; }
   .header-credit-name strong { color: var(--ink); font-weight: 600; }
+  @media (max-width: 600px) {
+    header { padding: 28px 20px 24px; }
+    .header-credit-sep { display: none; }
+    .header-credit { gap: 6px; flex-direction: column; }
+  }
 
   main { max-width: 1120px; margin: 0 auto; padding: 40px 24px 80px; }
 
@@ -65,12 +72,13 @@
     border-radius: 20px; padding: 32px; margin-bottom: 28px;
     box-shadow: 0 4px 20px var(--shadow);
   }
+  @media (max-width: 600px) { .input-section { padding: 20px 16px; border-radius: 16px; } }
   .section-label {
     font-family: 'Fira Code', monospace; font-size: 11px;
     letter-spacing: 2px; text-transform: uppercase; color: var(--ink3); margin-bottom: 20px;
   }
   .input-grid { display: grid; grid-template-columns: 1.2fr 1fr 1fr 1fr 1.4fr 0.9fr 0.9fr; gap: 14px; align-items: end; }
-  @media (max-width: 1100px) { .input-grid { grid-template-columns: 1fr 1fr 1fr 1fr; } header { padding: 24px 20px; } main { padding: 24px 16px 60px; } }
+  @media (max-width: 1100px) { .input-grid { grid-template-columns: 1fr 1fr 1fr 1fr; } main { padding: 24px 16px 60px; } }
   @media (max-width: 700px) { .input-grid { grid-template-columns: 1fr 1fr; } }
   @media (max-width: 400px) { .input-grid { grid-template-columns: 1fr; } }
 
@@ -172,15 +180,21 @@
   .bar-munkaber .bar-fill { background: var(--accent); }
   .bar-megbizas .bar-fill { background: var(--accent2); }
   .bar-efo .bar-fill { background: var(--accent3); }
+  @media (max-width: 500px) {
+    .bar-label { width: 80px; font-size: 11px; }
+    .bar-val { width: 80px; font-size: 11px; }
+    .bar-fill span { font-size: 10px; }
+  }
 
   .table-section {
     background: var(--card); border: 1px solid var(--border);
     border-radius: 18px; overflow: hidden; margin-bottom: 24px;
     animation: slideIn 0.4s ease 0.1s both;
   }
+  .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
   .table-header { padding: 18px 22px; border-bottom: 1px solid var(--border); }
   .table-header h3 { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 15px; font-weight: 700; }
-  table.main-table { width: 100%; border-collapse: collapse; }
+  table.main-table { width: 100%; border-collapse: collapse; min-width: 520px; }
   table.main-table th { background: var(--bg); padding: 10px 16px; text-align: left; font-family: 'Fira Code', monospace; font-size: 10px; letter-spacing: 1px; text-transform: uppercase; color: var(--ink3); font-weight: 500; }
   table.main-table td { padding: 11px 16px; font-size: 13px; border-top: 1px solid var(--border); }
   table.main-table tr:hover td { background: var(--bg2); }
@@ -189,6 +203,9 @@
   table.main-table tr.tr { }
   table.main-table tr.tr td { background: var(--bg); font-weight: 600; font-family: 'Fira Code', monospace; }
 
+  .cards-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 24px; }
+  @media (max-width: 800px) { .cards-grid { grid-template-columns: 1fr; } }
+
   .notes-section {
     background: var(--bg2); border-radius: 18px; padding: 18px 22px;
     animation: slideIn 0.4s ease 0.2s both;
@@ -196,6 +213,12 @@
   .notes-section h4 { font-family: 'Fira Code', monospace; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--ink3); margin-bottom: 10px; }
   .notes-section li { font-size: 12.5px; color: var(--ink2); line-height: 1.7; margin-bottom: 2px; }
   .notes-section ul { padding-left: 16px; }
+  @media (max-width: 600px) {
+    .result-card { padding: 16px; }
+    .chart-section { padding: 18px 14px; }
+    .recommendation { padding: 16px; }
+    .notes-section { padding: 16px; }
+  }
 </style>
 </head>
 <body>
@@ -269,6 +292,7 @@
     <!-- EFO referencia táblázat -->
     <div class="efo-ref">
       <div class="efo-ref-title">📊 2026-os EFO Adatok — SukorADÓ adatbázis alapján · minimálbér: 322 800 Ft/hó</div>
+      <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;">
       <table id="efoRefTable">
         <thead>
           <tr>
@@ -279,6 +303,7 @@
         </thead>
         <tbody id="efoRefBody"></tbody>
       </table>
+      </div>
     </div>
   </div>
 
