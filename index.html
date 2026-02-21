@@ -218,6 +218,7 @@
     .chart-section { padding: 18px 14px; }
     .recommendation { padding: 16px; }
     .notes-section { padding: 16px; }
+    .megbizas-grid { grid-template-columns: 1fr !important; }
   }
 </style>
 </head>
@@ -361,6 +362,49 @@
         <li><strong>10%-os költségátalány</strong> érvényesíthető megbízásnál az SZJA-alap csökkentésére</li>
         <li><strong>Új 2026.01.01-től:</strong> Tartós megbízási jogviszony új fogalma. Mezőgazd. idénymunkánál a 120 nap + 90 nappal meghosszabbítható.</li>
       </ul>
+
+      <!-- Megbízási jogviszony alkalmazhatósági figyelmeztetés -->
+      <div style="margin-top:20px;background:#FFF5F5;border:2px solid #FC8181;border-radius:14px;padding:18px 20px;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+          <span style="font-size:22px;">⚠️</span>
+          <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;font-weight:800;color:#C53030;">
+            Fontos! A megbízási jogviszony nem minden esetben alkalmazható
+          </div>
+        </div>
+        <p style="font-size:12.5px;color:#742A2A;line-height:1.7;margin-bottom:14px;">
+          A megbízási szerződés csak akkor jogszerű, ha a felek közötti kapcsolat <strong>valódi megbízási jellegű</strong> — 
+          azaz nem áll fenn munkaviszony-szerű alá-fölé rendeltség. A NAV rendszeresen vizsgálja és átminősítheti 
+          a valójában munkaviszonynak minősülő megbízásokat, ami súlyos bírságot vonhat maga után.
+        </p>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;" class="megbizas-grid">
+          <div style="background:#F0FFF4;border:1px solid #9AE6B4;border-radius:10px;padding:14px;">
+            <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:12px;font-weight:700;color:#276749;margin-bottom:10px;">✓ Jellemzően alkalmazható</div>
+            <ul style="padding-left:15px;margin:0;">
+              <li style="font-size:12px;color:#276749;line-height:1.75;">Szabadfoglalkozású szakértők, tanácsadók (IT, marketing, pénzügy, jog)</li>
+              <li style="font-size:12px;color:#276749;line-height:1.75;">Oktatók, trénerek, előadók — alkalmi vagy rendszeres megbízásban</li>
+              <li style="font-size:12px;color:#276749;line-height:1.75;">Könyvelők, adótanácsadók saját ügyfeleiknél</li>
+              <li style="font-size:12px;color:#276749;line-height:1.75;">Orvosok, egészségügyi szakemberek ügyeleti/helyettesítési feladatokra</li>
+              <li style="font-size:12px;color:#276749;line-height:1.75;">Építészek, tervezők, fejlesztők projekt alapon</li>
+              <li style="font-size:12px;color:#276749;line-height:1.75;">Ügyvezetők, cégvezetők — különösen ha tagok is egyben</li>
+              <li style="font-size:12px;color:#276749;line-height:1.75;">Művészek, szerzők, fotósok egyszeri vagy ismétlődő alkotásokra</li>
+            </ul>
+          </div>
+          <div style="background:#FFF5F5;border:1px solid #FEB2B2;border-radius:10px;padding:14px;">
+            <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:12px;font-weight:700;color:#C53030;margin-bottom:10px;">✗ Átminősítési kockázat — NEM alkalmazható</div>
+            <ul style="padding-left:15px;margin:0;">
+              <li style="font-size:12px;color:#742A2A;line-height:1.75;">Kötött munkaidőben, meghatározott helyen végzett rendszeres munkavégzés</li>
+              <li style="font-size:12px;color:#742A2A;line-height:1.75;">Ha a megbízó utasítási jogot gyakorol a megbízott felett</li>
+              <li style="font-size:12px;color:#742A2A;line-height:1.75;">Kizárólag egy megbízónak végzett, folyamatos és nem projektjellegű tevékenység</li>
+              <li style="font-size:12px;color:#742A2A;line-height:1.75;">Ha az eszközöket, munkaeszközöket a megbízó biztosítja</li>
+              <li style="font-size:12px;color:#742A2A;line-height:1.75;">Ha a tevékenység nem különbözik a munkavállalók feladataitól</li>
+            </ul>
+          </div>
+        </div>
+        <p style="font-size:11.5px;color:#742A2A;margin-top:12px;padding-top:10px;border-top:1px solid #FEB2B2;">
+          💡 Kétség esetén érdemes munkajogásszal vagy adótanácsadóval egyeztetni a jogviszony minősítéséről.
+        </p>
+      </div>
     </div>
   </div>
 </main>
