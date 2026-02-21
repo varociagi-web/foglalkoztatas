@@ -213,6 +213,30 @@
   .notes-section h4 { font-family: 'Fira Code', monospace; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--ink3); margin-bottom: 10px; }
   .notes-section li { font-size: 12.5px; color: var(--ink2); line-height: 1.7; margin-bottom: 2px; }
   .notes-section ul { padding-left: 16px; }
+
+  .kedvezmeny-section {
+    background: #EBF8FF; border: 1.5px solid #90CDF4;
+    border-radius: 16px; padding: 20px 24px; margin-top: 20px;
+  }
+  .kedvezmeny-title {
+    font-family: 'Plus Jakarta Sans', sans-serif; font-size: 13px; font-weight: 700;
+    color: #2B6CB0; margin-bottom: 14px; display: flex; align-items: center; gap: 8px;
+  }
+  .kedvezmeny-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  @media (max-width: 900px) { .kedvezmeny-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 500px) { .kedvezmeny-grid { grid-template-columns: 1fr; } }
+  .kedvezmeny-item {
+    background: white; border: 1.5px solid #BEE3F8; border-radius: 12px;
+    padding: 12px 14px; cursor: pointer; transition: all 0.15s;
+    display: flex; align-items: flex-start; gap: 10px;
+  }
+  .kedvezmeny-item:hover { border-color: #2B6CB0; box-shadow: 0 2px 8px rgba(43,108,176,0.12); }
+  .kedvezmeny-item.active { background: #dbeeff; border-color: #2B6CB0; }
+  .kedvezmeny-item input[type=checkbox] { margin-top: 2px; flex-shrink: 0; accent-color: #2B6CB0; width: 15px; height: 15px; cursor: pointer; }
+  .kedvezmeny-label { font-size: 12px; font-weight: 600; color: var(--ink); line-height: 1.4; }
+  .kedvezmeny-desc { font-size: 11px; color: var(--ink3); margin-top: 2px; line-height: 1.4; }
+  .kedvezmeny-aktiv-info { margin-top: 12px; padding: 10px 14px; background: #2B6CB0; border-radius: 10px; font-size: 12px; color: white; display: none; }
+  .kedvezmeny-aktiv-info.visible { display: block; }
   @media (max-width: 600px) {
     .result-card { padding: 16px; }
     .chart-section { padding: 18px 14px; }
@@ -288,6 +312,42 @@
         <label>&nbsp;</label>
         <button class="calc-btn" onclick="calculate()">Kiszámít →</button>
       </div>
+    </div>
+
+    <!-- SZJA kedvezmények -->
+    <div class="kedvezmeny-section">
+      <div class="kedvezmeny-title">💙 SZJA kedvezmények — munkabér és megbízás esetén</div>
+      <div class="kedvezmeny-grid">
+        <div class="kedvezmeny-item" id="kdv-25-box" onclick="document.getElementById('kdv25').click()">
+          <input type="checkbox" id="kdv25" onchange="toggleKedvezmeny('kdv25')" onclick="event.stopPropagation()">
+          <div>
+            <div class="kedvezmeny-label">25 év alatti fiatal</div>
+            <div class="kedvezmeny-desc">SZJA mentesség a minimálbér 2×-éig (645 600 Ft/hó). Felette normál adózás.</div>
+          </div>
+        </div>
+        <div class="kedvezmeny-item" id="kdv-30-box" onclick="document.getElementById('kdv30').click()">
+          <input type="checkbox" id="kdv30" onchange="toggleKedvezmeny('kdv30')" onclick="event.stopPropagation()">
+          <div>
+            <div class="kedvezmeny-label">30 év alatti anyák</div>
+            <div class="kedvezmeny-desc">SZJA mentesség a minimálbér 2×-éig (645 600 Ft/hó). 2025.01.01. után született első gyermektől.</div>
+          </div>
+        </div>
+        <div class="kedvezmeny-item" id="kdv-netak-box" onclick="document.getElementById('kdvNetak').click()">
+          <input type="checkbox" id="kdvNetak" onchange="toggleKedvezmeny('kdvNetak')" onclick="event.stopPropagation()">
+          <div>
+            <div class="kedvezmeny-label">4+ gyermekes anyák (NÉTAK)</div>
+            <div class="kedvezmeny-desc">Teljes SZJA mentesség — korlát nélkül, élethosszig.</div>
+          </div>
+        </div>
+        <div class="kedvezmeny-item" id="kdv-szemelyi-box" onclick="document.getElementById('kdvSzemelyi').click()">
+          <input type="checkbox" id="kdvSzemelyi" onchange="toggleKedvezmeny('kdvSzemelyi')" onclick="event.stopPropagation()">
+          <div>
+            <div class="kedvezmeny-label">Személyi kedvezmény</div>
+            <div class="kedvezmeny-desc">Súlyos fogyatékosság / tartós betegség: min.bér 5%-a = ~16 140 Ft/hó adókedvezmény.</div>
+          </div>
+        </div>
+      </div>
+      <div class="kedvezmeny-aktiv-info" id="kedvezmenyInfo"></div>
     </div>
 
     <!-- EFO referencia táblázat -->
@@ -439,25 +499,99 @@ function updateEfoRef() {
 
 const MINBER_HAVI = 322800;
 const JARULEK_ALAP_MIN = MINBER_HAVI * 0.30; // 96 840 Ft
+const SZJA_MENTES_HATAR = MINBER_HAVI * 2;   // 645 600 Ft — 25 év alatti / 30 év alatti anyák
+const SZEMELYI_KEDVEZMENY = MINBER_HAVI * 0.05; // ~16 140 Ft/hó adókedvezmény
 
-function calcMunkaber(netto, munkaltadiRat, munkavTBRat) {
-  // Normál esetben: bruttó = nettó / (1 - TB - SZJA)
-  let brutto = netto / (1 - munkavTBRat - TAX.szja);
-  let jarulek_alap = brutto;
-  let jarulekAlapMinAlkalmaz = false;
+function toggleKedvezmeny(cbId) {
+  const exkluziv = ['kdv25', 'kdv30', 'kdvNetak'];
+  const boxMap = { 'kdv25': 'kdv-25-box', 'kdv30': 'kdv-30-box', 'kdvNetak': 'kdv-netak-box', 'kdvSzemelyi': 'kdv-szemelyi-box' };
 
-  // Ha a bruttó < minimálbér 30% (és van TB = nem nyugdíjas),
-  // akkor a járulékokat legalább a minimum alap után kell fizetni.
-  // Ilyenkor: nettó = bruttó - (min_alap × TB) - (min_alap × SZJA)
-  // → bruttó = nettó + min_alap × (TB + SZJA)
-  if (munkavTBRat > 0 && brutto < JARULEK_ALAP_MIN) {
-    brutto = netto + JARULEK_ALAP_MIN * (munkavTBRat + TAX.szja);
-    jarulek_alap = JARULEK_ALAP_MIN;
-    jarulekAlapMinAlkalmaz = true;
+  // Ha exkluzív és be van pipálva, a másik kettőt töröljük
+  if (exkluziv.includes(cbId) && document.getElementById(cbId).checked) {
+    exkluziv.filter(id => id !== cbId).forEach(id => {
+      document.getElementById(id).checked = false;
+      document.getElementById(boxMap[id]).classList.remove('active');
+    });
   }
 
-  const szja = jarulek_alap * TAX.szja;
-  const tb = jarulek_alap * munkavTBRat;
+  // Active class frissítés
+  Object.keys(boxMap).forEach(id => {
+    document.getElementById(boxMap[id]).classList.toggle('active', document.getElementById(id).checked);
+  });
+
+  updateKedvezmenyInfo();
+}
+
+function updateKedvezmenyInfo() {
+  const kdv25 = document.getElementById('kdv25').checked;
+  const kdv30 = document.getElementById('kdv30').checked;
+  const netak = document.getElementById('kdvNetak').checked;
+  const szemelyi = document.getElementById('kdvSzemelyi').checked;
+  const infoEl = document.getElementById('kedvezmenyInfo');
+  const aktiv = [];
+  if (kdv25) aktiv.push('25 év alatti: SZJA mentes a minimálbér 2×-éig (645 600 Ft/hó)');
+  if (kdv30) aktiv.push('30 év alatti anyák: SZJA mentes a minimálbér 2×-éig (645 600 Ft/hó)');
+  if (netak) aktiv.push('NÉTAK: teljes SZJA mentesség, korlát nélkül');
+  if (szemelyi) aktiv.push('Személyi kedvezmény: 16 140 Ft/hó adócsökkentés');
+  if (aktiv.length > 0) {
+    infoEl.innerHTML = '✓ Aktív kedvezmény(ek): ' + aktiv.join(' · ');
+    infoEl.classList.add('visible');
+  } else {
+    infoEl.classList.remove('visible');
+  }
+}
+
+function getSzjaKedvezmeny(brutto, szjaAlap) {
+  return _szjaKedvezmenyAlap(szjaAlap);
+}
+
+function getSzjaKedvezmenyMegbizas(szjaAlap90) {
+  // Megbízásnál az alap már a 90%-os összeg (ktghányad után)
+  return _szjaKedvezmenyAlap(szjaAlap90);
+}
+
+function _szjaKedvezmenyAlap(alap) {
+  const kdv25 = document.getElementById('kdv25').checked;
+  const kdv30 = document.getElementById('kdv30').checked;
+  const netak = document.getElementById('kdvNetak').checked;
+  const szemelyi = document.getElementById('kdvSzemelyi').checked;
+
+  let szja = alap * TAX.szja;
+
+  if (netak) {
+    szja = 0;
+  } else if (kdv25 || kdv30) {
+    const mentes = Math.min(alap, SZJA_MENTES_HATAR);
+    const adozott = Math.max(0, alap - SZJA_MENTES_HATAR);
+    szja = adozott * TAX.szja;
+  }
+
+  if (szemelyi && !netak) {
+    szja = Math.max(0, szja - SZEMELYI_KEDVEZMENY);
+  }
+
+  return szja;
+}
+
+function calcMunkaber(netto, munkaltadiRat, munkavTBRat) {
+  // Iteratív bruttó visszaszámítás, mert a SZJA kedvezmény a bruttótól függ
+  let brutto = netto / (1 - munkavTBRat - TAX.szja); // kiindulópont
+  let jarulek_alap, szja, tb, jarulekAlapMinAlkalmaz = false;
+
+  for (let i = 0; i < 50; i++) {
+    jarulek_alap = (munkavTBRat > 0 && brutto < JARULEK_ALAP_MIN) ? JARULEK_ALAP_MIN : brutto;
+    jarulekAlapMinAlkalmaz = (munkavTBRat > 0 && brutto < JARULEK_ALAP_MIN);
+    szja = getSzjaKedvezmeny(brutto, jarulek_alap);
+    tb = jarulek_alap * munkavTBRat;
+    const bruttoUj = netto + szja + tb;
+    if (Math.abs(bruttoUj - brutto) < 0.5) { brutto = bruttoUj; break; }
+    brutto = bruttoUj;
+  }
+
+  jarulek_alap = (munkavTBRat > 0 && brutto < JARULEK_ALAP_MIN) ? JARULEK_ALAP_MIN : brutto;
+  jarulekAlapMinAlkalmaz = (munkavTBRat > 0 && brutto < JARULEK_ALAP_MIN);
+  szja = getSzjaKedvezmeny(brutto, jarulek_alap);
+  tb = jarulek_alap * munkavTBRat;
   const munkaltAdo = jarulek_alap * munkaltadiRat;
   return { brutto, jarulek_alap, szja, tb, munkaltAdo, munkaltOssz: brutto + munkaltAdo, netto, jarulekAlapMinAlkalmaz };
 }
@@ -469,51 +603,72 @@ function calcMegbizas(netto, munkaltadiRat, munkavTBRat, tartos) {
   // - Nyugdíjas (munkavTBRat=0): soha nem biztosított TB szempontjából
 
   let dij, tb, munkaltAdo, jarulek_alap, nemBiztositott, tartosBiztAlkalmaz = false;
+  const szjaRatMb = (1 - TAX.koltsegalany) * TAX.szja;
 
   if (munkavTBRat === 0) {
-    // Nyugdíjas: csak SZJA, nincs TB, nincs munkáltatói
-    dij = netto / (1 - (1 - TAX.koltsegalany) * TAX.szja);
-    tb = 0;
-    munkaltAdo = 0;
-    jarulek_alap = dij;
-    nemBiztositott = true;
+    // Nyugdíjas: iteratív visszaszámítás, csak SZJA (90% alap)
+    dij = netto / (1 - szjaRatMb); // kiindulópont
+    for (let i = 0; i < 50; i++) {
+      const s = getSzjaKedvezmenyMegbizas(dij * (1 - TAX.koltsegalany));
+      const dijUj = netto + s;
+      if (Math.abs(dijUj - dij) < 0.5) { dij = dijUj; break; }
+      dij = dijUj;
+    }
+    tb = 0; munkaltAdo = 0; jarulek_alap = dij; nemBiztositott = true;
   } else if (tartos) {
-    // Tartós megbízás: mindig biztosított, járulékalap min. 96 840 Ft
-    // Először próbáljuk normál visszaszámítással
-    const dijNormal = netto / (1 - munkavTBRat - (1 - TAX.koltsegalany) * TAX.szja);
+    // Tartós: mindig biztosított, min. járulékalap
+    const dijNormal = netto / (1 - munkavTBRat - szjaRatMb);
     if (dijNormal < JARULEK_ALAP_MIN) {
-      // A járulékokat a minimum alap után kell fizetni
-      // nettó = díj - (min_alap × TB) - (min_alap × SZJA_alap_rát)
-      const szjaRat = (1 - TAX.koltsegalany) * TAX.szja;
-      dij = netto + JARULEK_ALAP_MIN * (munkavTBRat + szjaRat);
+      // Iteratív: nettó = díj - szja(min_alap×90%) - TB(min_alap)
+      dij = netto + JARULEK_ALAP_MIN * (munkavTBRat + szjaRatMb); // kiindulópont
       jarulek_alap = JARULEK_ALAP_MIN;
+      for (let i = 0; i < 50; i++) {
+        const s = getSzjaKedvezmenyMegbizas(jarulek_alap * (1 - TAX.koltsegalany));
+        const dijUj = netto + s + jarulek_alap * munkavTBRat;
+        if (Math.abs(dijUj - dij) < 0.5) { dij = dijUj; break; }
+        dij = dijUj;
+      }
       tartosBiztAlkalmaz = true;
     } else {
-      dij = dijNormal;
-      jarulek_alap = dij;
+      dij = dijNormal; jarulek_alap = dij;
+      for (let i = 0; i < 50; i++) {
+        const s = getSzjaKedvezmenyMegbizas(dij * (1 - TAX.koltsegalany));
+        const dijUj = netto + s + dij * munkavTBRat;
+        if (Math.abs(dijUj - dij) < 0.5) { dij = dijUj; break; }
+        dij = dijUj; jarulek_alap = dij;
+      }
     }
     tb = jarulek_alap * munkavTBRat;
     munkaltAdo = jarulek_alap * munkaltadiRat;
     nemBiztositott = false;
   } else {
     // Eseti: biztosított csak ha díj >= 96 840 Ft
-    const dijBizt = netto / (1 - munkavTBRat - (1 - TAX.koltsegalany) * TAX.szja);
-    if (dijBizt < JARULEK_ALAP_MIN) {
-      dij = netto / (1 - (1 - TAX.koltsegalany) * TAX.szja);
-      tb = 0;
-      munkaltAdo = 0;
-      jarulek_alap = dij;
-      nemBiztositott = true;
+    let dijProba = netto / (1 - munkavTBRat - szjaRatMb);
+    if (dijProba < JARULEK_ALAP_MIN) {
+      // Nem biztosított: csak SZJA
+      dij = netto / (1 - szjaRatMb);
+      for (let i = 0; i < 50; i++) {
+        const s = getSzjaKedvezmenyMegbizas(dij * (1 - TAX.koltsegalany));
+        const dijUj = netto + s;
+        if (Math.abs(dijUj - dij) < 0.5) { dij = dijUj; break; }
+        dij = dijUj;
+      }
+      tb = 0; munkaltAdo = 0; jarulek_alap = dij; nemBiztositott = true;
     } else {
-      dij = dijBizt;
-      jarulek_alap = dij;
+      dij = dijProba; jarulek_alap = dij;
+      for (let i = 0; i < 50; i++) {
+        const s = getSzjaKedvezmenyMegbizas(dij * (1 - TAX.koltsegalany));
+        const dijUj = netto + s + dij * munkavTBRat;
+        if (Math.abs(dijUj - dij) < 0.5) { dij = dijUj; break; }
+        dij = dijUj; jarulek_alap = dij;
+      }
       tb = dij * munkavTBRat;
       munkaltAdo = dij * munkaltadiRat;
       nemBiztositott = false;
     }
   }
 
-  const szja = jarulek_alap * (1 - TAX.koltsegalany) * TAX.szja;
+  const szja = getSzjaKedvezmenyMegbizas(jarulek_alap * (1 - TAX.koltsegalany));
   return { brutto: dij, jarulek_alap, szja, tb, munkaltAdo, munkaltOssz: dij + munkaltAdo, netto, nemBiztositott, tartosBiztAlkalmaz };
 }
 
@@ -592,10 +747,12 @@ function calculate() {
       const tbSor = isNyugdijas
         ? { l: 'Munkavállaló TB járulék', v: '— (nyugdíjas, mentes)' }
         : { l: 'Munkavállaló TB járulék (18,5%)', v: '– ' + fmt(data.tb) };
+      const kdvAktiv = document.getElementById('kdv25').checked || document.getElementById('kdv30').checked || document.getElementById('kdvNetak').checked || document.getElementById('kdvSzemelyi').checked;
+      const szjaSor = { l: 'Munkavállaló SZJA' + (kdvAktiv ? ' (kedvezménnyel)' : ' (15%)'), v: data.szja === 0 ? '— (teljes mentesség)' : '– ' + fmt(data.szja) };
       sorok = [
         { l: 'Bruttó bér', v: fmt(data.brutto) },
         ...jarulekAlapSor,
-        { l: 'Munkavállaló SZJA (15%)', v: '– ' + fmt(data.szja) },
+        szjaSor,
         tbSor,
         { l: 'Nettó kézhez', v: fmt(netto), h: true },
         { l: 'Munkáltatói ' + (isNyugdijas ? 'járulék' : munkaltadiLabel), v: isNyugdijas ? '— (nyugdíjas, mentes)' : fmt(data.munkaltAdo) },
@@ -624,11 +781,12 @@ function calculate() {
       const munkaltSor = mb.nemBiztositott
         ? { l: 'Munkáltatói járulék', v: '— (nem biztosított)' }
         : { l: 'Munkáltatói ' + munkaltadiLabel, v: fmt(data.munkaltAdo) };
+      const kdvAktivMb = document.getElementById('kdv25').checked || document.getElementById('kdv30').checked || document.getElementById('kdvNetak').checked || document.getElementById('kdvSzemelyi').checked;
       sorok = [
         { l: 'Megbízási díj (bruttó)', v: fmt(data.brutto) },
         biztStatusz,
         ...tartosSor,
-        { l: 'Munkavállaló SZJA (90% × 15%)', v: '– ' + fmt(data.szja) },
+        { l: 'Munkavállaló SZJA (90%' + (kdvAktivMb ? ', kedvezménnyel)' : ' × 15%)'), v: data.szja === 0 ? '— (teljes mentesség)' : '– ' + fmt(data.szja) },
         tbSor,
         { l: 'Nettó kézhez', v: fmt(netto), h: true },
         munkaltSor,
