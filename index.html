@@ -509,9 +509,9 @@ function frissitKedvezmenyElerheto() {
   const isNyugdijas = document.getElementById('munkavStatusz').value === 'nyugdijas';
   const boxMap = { 'kdv25': 'kdv-25-box', 'kdv30': 'kdv-30-box', 'kdvNetak': 'kdv-netak-box', 'kdvSzemelyi': 'kdv-szemelyi-box' };
 
-  // Nyugdíjasnál SZJA nincs → 25 alatti és 30 év alatti anyák értelmetlen (életkori ellentmondás is)
-  // NÉTAK viszont lehetséges (élethosszig szól), bár számítási hatása nincs (nincs SZJA)
-  const tiltottIds = isNyugdijas ? ['kdv25', 'kdv30', 'kdvSzemelyi'] : [];
+  // Nyugdíjasnál csak a 25 alatti és 30 év alatti anyák tiltott (életkori ellentmondás)
+  // NÉTAK és személyi kedvezmény érvényes és hat a számításra
+  const tiltottIds = isNyugdijas ? ['kdv25', 'kdv30'] : [];
 
   tiltottIds.forEach(id => {
     document.getElementById(id).checked = false;
@@ -527,7 +527,7 @@ function frissitKedvezmenyElerheto() {
   // Tiltott figyelmeztetés
   const tiltottEl = document.getElementById('kedvezmenyTiltott');
   if (isNyugdijas) {
-    tiltottEl.innerHTML = '⚠️ Nyugdíjas esetén a 25 év alatti, 30 év alatti anyák és személyi kedvezmény nem alkalmazható. A NÉTAK jelölhető, de számítási hatása nincs (a nyugdíjas munkavállalónak nincs SZJA kötelezettsége).';
+    tiltottEl.innerHTML = '⚠️ Nyugdíjas esetén a 25 év alatti és 30 év alatti anyák kedvezménye nem alkalmazható (életkori ellentmondás). A NÉTAK és a személyi kedvezmény érvényes és hat a számításra — a nyugdíjas munkavállalónak van SZJA kötelezettsége, TB alól mentes.';
     tiltottEl.classList.add('visible');
   } else {
     tiltottEl.classList.remove('visible');
