@@ -235,8 +235,10 @@
   .kedvezmeny-item input[type=checkbox] { margin-top: 2px; flex-shrink: 0; accent-color: #2B6CB0; width: 15px; height: 15px; cursor: pointer; }
   .kedvezmeny-label { font-size: 12px; font-weight: 600; color: var(--ink); line-height: 1.4; }
   .kedvezmeny-desc { font-size: 11px; color: var(--ink3); margin-top: 2px; line-height: 1.4; }
-  .kedvezmeny-aktiv-info { margin-top: 12px; padding: 10px 14px; background: #2B6CB0; border-radius: 10px; font-size: 12px; color: white; display: none; }
-  .kedvezmeny-aktiv-info.visible { display: block; }
+  .kedvezmeny-item.disabled { opacity: 0.38; cursor: not-allowed; pointer-events: none; background: var(--bg2); border-color: var(--border); }
+  .kedvezmeny-item.disabled .kedvezmeny-label { color: var(--ink3); }
+  .kedvezmeny-tiltott-info { margin-top: 10px; padding: 9px 13px; background: #FFF5F5; border: 1px solid #FEB2B2; border-radius: 10px; font-size: 11.5px; color: #C53030; display: none; }
+  .kedvezmeny-tiltott-info.visible { display: block; }
   @media (max-width: 600px) {
     .result-card { padding: 16px; }
     .chart-section { padding: 18px 14px; }
@@ -279,7 +281,7 @@
       </div>
       <div class="field">
         <label>Munkavállaló státusza</label>
-        <select id="munkavStatusz">
+        <select id="munkavStatusz" onchange="frissitKedvezmenyElerheto()">
           <option value="normal">Általános (SZJA + TB)</option>
           <option value="nyugdijas">Nyugdíjas (csak SZJA)</option>
         </select>
@@ -348,6 +350,7 @@
         </div>
       </div>
       <div class="kedvezmeny-aktiv-info" id="kedvezmenyInfo"></div>
+      <div class="kedvezmeny-tiltott-info" id="kedvezmenyTiltott"></div>
     </div>
 
     <!-- EFO referencia táblázat -->
@@ -501,6 +504,37 @@ const MINBER_HAVI = 322800;
 const JARULEK_ALAP_MIN = MINBER_HAVI * 0.30; // 96 840 Ft
 const SZJA_MENTES_HATAR = MINBER_HAVI * 2;   // 645 600 Ft — 25 év alatti / 30 év alatti anyák
 const SZEMELYI_KEDVEZMENY = MINBER_HAVI * 0.05; // ~16 140 Ft/hó adókedvezmény
+
+function frissitKedvezmenyElerheto() {
+  const isNyugdijas = document.getElementById('munkavStatusz').value === 'nyugdijas';
+  const boxMap = { 'kdv25': 'kdv-25-box', 'kdv30': 'kdv-30-box', 'kdvNetak': 'kdv-netak-box', 'kdvSzemelyi': 'kdv-szemelyi-box' };
+
+  // Nyugdíjasnál SZJA nincs → 25 alatti és 30 év alatti anyák értelmetlen (életkori ellentmondás is)
+  // NÉTAK viszont lehetséges (élethosszig szól), bár számítási hatása nincs (nincs SZJA)
+  const tiltottIds = isNyugdijas ? ['kdv25', 'kdv30', 'kdvSzemelyi'] : [];
+
+  tiltottIds.forEach(id => {
+    document.getElementById(id).checked = false;
+    document.getElementById(boxMap[id]).classList.remove('active');
+    document.getElementById(boxMap[id]).classList.add('disabled');
+  });
+
+  // Nem tiltottak: disabled eltávolítás
+  Object.keys(boxMap).filter(id => !tiltottIds.includes(id)).forEach(id => {
+    document.getElementById(boxMap[id]).classList.remove('disabled');
+  });
+
+  // Tiltott figyelmeztetés
+  const tiltottEl = document.getElementById('kedvezmenyTiltott');
+  if (isNyugdijas) {
+    tiltottEl.innerHTML = '⚠️ Nyugdíjas esetén a 25 év alatti, 30 év alatti anyák és személyi kedvezmény nem alkalmazható. A NÉTAK jelölhető, de számítási hatása nincs (a nyugdíjas munkavállalónak nincs SZJA kötelezettsége).';
+    tiltottEl.classList.add('visible');
+  } else {
+    tiltottEl.classList.remove('visible');
+  }
+
+  updateKedvezmenyInfo();
+}
 
 function toggleKedvezmeny(cbId) {
   const exkluziv = ['kdv25', 'kdv30', 'kdvNetak'];
@@ -816,11 +850,14 @@ function calculate() {
       </div>`;
   } else {
   const napMaxWarn = e.napiKif > 29700;
+  const MINBER_ORABR = MINBER_HAVI / 174; // ~1 855 Ft/óra
+  const napiMinWarn = e.napiKif < e.napiBer;
+  const maxOra = napiMinWarn ? (e.napiKif / MINBER_ORABR).toFixed(1) : null;
 
   let efoRows = [
     { l: 'EFO típusa', v: e.label },
-    { l: 'Minimálisan kifizetendő napi bér', v: fmt(e.napiBer) + '/nap' },
-    { l: 'Ténylegesen kifizetett napi', v: fmt(e.napiKif) + '/nap' + (napMaxWarn ? ' ⚠️' : ''), c: napMaxWarn ? 'warn' : '' },
+    { l: 'Minimálisan kifizetendő napi bér', v: fmt(e.napiBer) + '/nap', c: napiMinWarn ? 'warn' : '' },
+    { l: 'Ténylegesen kifizetett napi', v: fmt(e.napiKif) + '/nap' + (napMaxWarn ? ' ⚠️' : '') + (napiMinWarn ? ' ⚠️' : ''), c: (napMaxWarn || napiMinWarn) ? 'warn' : '' },
     { l: 'Nettó kézhez (' + napok + ' nap)', v: fmt(netto), h: true },
     { l: 'Közteher/nap × ' + napok + ' nap', v: fmtN(e.kozteherPerNap) + ' × ' + napok + ' = ' + fmt(e.kozteher) },
     { l: 'Munkáltató összköltsége', v: fmt(e.munkaltOssz) },
@@ -830,7 +867,17 @@ function calculate() {
   ).join('');
 
   if (napMaxWarn) {
-    document.getElementById('efo-metrics').innerHTML += '<div style="background:#FED7D7;border-radius:6px;padding:8px 10px;font-size:11.5px;color:#C53030;margin-top:8px;">⚠️ A kifizetett napi bér meghaladja a max. 29 700 Ft/nap korlátot!</div>';
+    document.getElementById('efo-metrics').innerHTML += '<div style="background:#FED7D7;border-radius:8px;padding:9px 12px;font-size:11.5px;color:#C53030;margin-top:8px;">⚠️ A kifizetett napi bér meghaladja a max. 29 700 Ft/nap korlátot!</div>';
+  }
+
+  if (napiMinWarn) {
+    document.getElementById('efo-metrics').innerHTML += `
+      <div style="background:#FFFBEB;border:1px solid #F6E05E;border-radius:8px;padding:10px 13px;font-size:12px;color:#7A5F00;margin-top:8px;line-height:1.65;">
+        ⚠️ <strong>A kifizetett napi összeg (${fmt(e.napiKif)}) kisebb a minimális EFO napi bérnél (${fmt(e.napiBer)}).</strong><br>
+        Ez akkor jogszerű, ha a dolgozó aznap kevesebbet dolgozik — a beírt összeg legfeljebb
+        <strong>${maxOra} óra</strong> munkának felel meg minimálbér alapján (${Math.round(MINBER_ORABR).toLocaleString('hu-HU')} Ft/óra).<br>
+        <span style="font-size:11px;opacity:0.8;">Minimálbér órabér = 322 800 Ft ÷ 174 óra/hó</span>
+      </div>`;
   }
 
   // Mentesített keretösszeg tájékoztató SZJA
