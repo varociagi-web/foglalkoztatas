@@ -297,6 +297,7 @@
       <div class="irany-toggle" id="iranyToggle">
         <button class="irany-btn active" id="btnNetto" onclick="setIrany('netto')">Nettóból</button>
         <button class="irany-btn" id="btnBrutto" onclick="setIrany('brutto')">Bruttóból</button>
+        <button class="irany-btn" id="btnOrabér" onclick="setIrany('orabér')">Órabérből</button>
       </div>
     </div>
     <div class="input-grid">
@@ -305,6 +306,44 @@
         <div class="input-suffix">
           <input type="number" id="nettoInput" value="400000" min="1000" step="1000">
           <span>Ft</span>
+        </div>
+      </div>
+      <!-- Órabér mód mezők -->
+      <div class="field" id="orabérMezoWrapper" style="display:none">
+        <label style="display:flex;align-items:center;justify-content:space-between;">
+          <span id="orabérLabel">Bruttó órabér</span>
+          <div class="irany-toggle" style="scale:0.85;transform-origin:right;">
+            <button class="irany-btn active" id="btnOrabérBrutto" onclick="setOrabérTipus('brutto')">Bruttó</button>
+            <button class="irany-btn" id="btnOrabérNetto" onclick="setOrabérTipus('netto')">Nettó</button>
+          </div>
+        </label>
+        <div class="input-suffix">
+          <input type="number" id="orabérInput" value="3000" min="100" step="50" oninput="szamolOrabér()">
+          <span>Ft/óra</span>
+        </div>
+      </div>
+      <div class="field" id="havioraWrapper" style="display:none">
+        <label>Hónap / munkaóra</label>
+        <div style="display:flex;gap:8px;">
+          <select id="honapSelect" onchange="honapValtozas()" style="flex:1;">
+            <option value="">— Hónap —</option>
+            <option value="168">Január (168 óra)</option>
+            <option value="160" selected>Február (160 óra)</option>
+            <option value="176">Március (176 óra)</option>
+            <option value="160">Április (160 óra)</option>
+            <option value="152">Május (152 óra)</option>
+            <option value="176">Június (176 óra)</option>
+            <option value="184">Július (184 óra)</option>
+            <option value="160">Augusztus (160 óra)</option>
+            <option value="176">Szeptember (176 óra)</option>
+            <option value="168">Október (168 óra)</option>
+            <option value="168">November (168 óra)</option>
+            <option value="176">December (176 óra)</option>
+          </select>
+          <div class="input-suffix" style="flex:0 0 90px;">
+            <input type="number" id="havioraInput" value="160" min="1" max="260" step="0.5" oninput="szamolOrabér()">
+            <span>óra</span>
+          </div>
         </div>
       </div>
       <div class="field">
@@ -348,7 +387,7 @@
       <div class="field">
         <label>Munkaidő (részmunkaidőhöz)</label>
         <div class="input-suffix">
-          <input type="number" id="munkaidoInput" value="8" min="1" max="8" step="0.5">
+          <input type="number" id="munkaidoInput" value="8" min="1" max="8" step="0.5" oninput="frissitHaviOra()">
           <span>óra</span>
         </div>
       </div>
@@ -447,6 +486,7 @@
   </div>
 
   <div id="bruttoInfoSav" style="display:none"></div>
+  <div id="orabérInfoSav" style="display:none;background:#EBF8FF;border:1px solid #90CDF4;border-radius:10px;padding:10px 16px;font-size:13px;color:#2B6CB0;margin-bottom:16px;"></div>
   <div id="results">
     <div id="recommendation" class="recommendation"></div>
 
@@ -601,18 +641,103 @@ function updateEfoRef() {
   ).join('');
 }
 
-let kalkulatorIrany = 'netto'; // 'netto' vagy 'brutto'
+let kalkulatorIrany = 'netto'; // 'netto', 'brutto', 'orabér'
 
 function setIrany(irany) {
   kalkulatorIrany = irany;
   document.getElementById('btnNetto').classList.toggle('active', irany === 'netto');
   document.getElementById('btnBrutto').classList.toggle('active', irany === 'brutto');
-  document.getElementById('osszegLabel').textContent = irany === 'netto' ? 'Nettó összeg (Ft/hó)' : 'Bruttó összeg (Ft/hó)';
-  document.getElementById('sectionLabelText').textContent = irany === 'netto'
-    ? 'Kiindulópont — nettó kézhez kapott összeg'
-    : 'Kiindulópont — bruttó bér / megbízási díj';
-  // Eredményeket töröljük, mert más értelmű lett az input
+  document.getElementById('btnOrabér').classList.toggle('active', irany === 'orabér');
+
+  const orabérMod = irany === 'orabér';
+  document.getElementById('orabérMezoWrapper').style.display = orabérMod ? '' : 'none';
+  document.getElementById('havioraWrapper').style.display = orabérMod ? '' : 'none';
+  document.getElementById('nettoInput').closest('.field').style.display = orabérMod ? 'none' : '';
+
+  if (orabérMod) {
+    document.getElementById('osszegLabel').textContent = 'Bruttó összeg (Ft/hó)';
+    document.getElementById('sectionLabelText').textContent = 'Kiindulópont — órabér alapján';
+    // Hónap dropdown alapján frissíti a havi órát
+    const honapVal = document.getElementById('honapSelect').value;
+    if (honapVal) document.getElementById('havioraInput').value = honapVal;
+    szamolOrabér();
+  } else {
+    document.getElementById('osszegLabel').textContent = irany === 'netto' ? 'Nettó összeg (Ft/hó)' : 'Bruttó összeg (Ft/hó)';
+    document.getElementById('sectionLabelText').textContent = irany === 'netto'
+      ? 'Kiindulópont — nettó kézhez kapott összeg'
+      : 'Kiindulópont — bruttó bér / megbízási díj';
+  }
   document.getElementById('results').classList.remove('visible');
+  document.getElementById('eves-osszesito').style.display = 'none';
+}
+
+function honapValtozas() {
+  const val = document.getElementById('honapSelect').value;
+  if (val) {
+    document.getElementById('havioraInput').value = val;
+    szamolOrabér();
+  }
+}
+
+function frissitHaviOra() {
+  const ora = parseFloat(document.getElementById('munkaidoInput').value) || 8;
+  // Ha 8 órás teljes munkaidő, az aktuálisan kiválasztott hónap óráit használjuk
+  // Ha részmunkaidő, arányosítjuk
+  const honapOra = parseFloat(document.getElementById('havioraInput').value) || 174;
+  if (ora < 8) {
+    const aranyosOra = Math.round(honapOra * ora / 8 * 10) / 10;
+    document.getElementById('havioraInput').value = aranyosOra;
+  }
+  if (kalkulatorIrany === 'orabér') szamolOrabér();
+}
+
+let orabérTipus = 'brutto'; // 'brutto' vagy 'netto'
+
+function setOrabérTipus(tipus) {
+  orabérTipus = tipus;
+  document.getElementById('btnOrabérBrutto').classList.toggle('active', tipus === 'brutto');
+  document.getElementById('btnOrabérNetto').classList.toggle('active', tipus === 'netto');
+  document.getElementById('orabérLabel').textContent = tipus === 'brutto' ? 'Bruttó órabér' : 'Nettó órabér';
+  szamolOrabér();
+}
+
+function szamolOrabér() {
+  const orabér = parseFloat(document.getElementById('orabérInput').value) || 0;
+  const haviora = parseFloat(document.getElementById('havioraInput').value) || 174;
+
+  let bruttoHavi;
+  if (orabérTipus === 'netto') {
+    // Nettó órabérből visszaszámítjuk a bruttót iteratívan (munkabér logika)
+    const nettoHavi = orabér * haviora;
+    const isNyugdijas = document.getElementById('munkavStatusz').value === 'nyugdijas';
+    const munkavTBRat = isNyugdijas ? 0 : TAX.munkavTB;
+    const arany = getReszMunkaidoArany();
+    const jarulekAlapMinAranyos = JARULEK_ALAP_MIN * arany;
+    let brutto = nettoHavi / (1 - munkavTBRat - TAX.szja);
+    for (let i = 0; i < 50; i++) {
+      const jarulek_alap = (munkavTBRat > 0 && brutto < jarulekAlapMinAranyos) ? jarulekAlapMinAranyos : brutto;
+      const szja = getSzjaKedvezmeny(brutto, jarulek_alap);
+      const tb = jarulek_alap * munkavTBRat;
+      const tbAtmenet = getCsaladiTbAtmenet(jarulek_alap);
+      const bruttoUj = nettoHavi + szja + Math.max(0, tb - tbAtmenet);
+      if (Math.abs(bruttoUj - brutto) < 0.5) { brutto = bruttoUj; break; }
+      brutto = bruttoUj;
+    }
+    bruttoHavi = Math.round(brutto);
+  } else {
+    bruttoHavi = Math.round(orabér * haviora);
+  }
+
+  document.getElementById('nettoInput').value = bruttoHavi;
+
+  const infoEl = document.getElementById('orabérInfoSav');
+  if (infoEl && bruttoHavi > 0) {
+    const nettoMegjegyzes = orabérTipus === 'netto'
+      ? ` → <strong>${bruttoHavi.toLocaleString('hu-HU')} Ft bruttó/hó</strong>`
+      : ` = <strong>${bruttoHavi.toLocaleString('hu-HU')} Ft bruttó/hó</strong>`;
+    infoEl.innerHTML = `${orabér.toLocaleString('hu-HU')} Ft/óra (${orabérTipus}) × ${haviora} óra${nettoMegjegyzes}`;
+    infoEl.style.display = 'block';
+  }
 }
 
 const MINBER_HAVI = 322800;
@@ -1017,13 +1142,13 @@ function calculate() {
 
   let netto, m, mb;
   let bruttoInfo = null;
+  const isBruttoMod = kalkulatorIrany === 'brutto' || kalkulatorIrany === 'orabér';
 
-  if (kalkulatorIrany === 'brutto') {
+  if (isBruttoMod) {
     const brutto = inputOssz;
     m  = calcMunkaberBruttobol(brutto, munkaltadiRat, munkavTBRat);
     mb = calcMegbizasBruttobol(brutto, munkaltadiRat, munkavTBRat, isTartos);
-    // A nettó munkabér szempontjából mutatjuk a tájékoztatóban
-    netto = m.netto; // munkabérnél ez a tényleges kézhez kapott összeg
+    netto = m.netto;
     bruttoInfo = { brutto, szja: m.szja, tb: m.tb, netto: m.netto };
   } else {
     netto = inputOssz;
@@ -1031,10 +1156,10 @@ function calculate() {
     mb = calcMegbizas(netto, munkaltadiRat, munkavTBRat, isTartos);
   }
 
-  const efoNetto = kalkulatorIrany === 'brutto' ? inputOssz : netto;
+  const efoNetto = isBruttoMod ? inputOssz : netto;
   const e = calcEfo(efoNetto, napok, efoKey);
   const ekhoAktiv = isEkhoJogosult();
-  const ekho = ekhoAktiv ? calcEkho(kalkulatorIrany === 'brutto' ? inputOssz : netto, munkaltadiRat) : null;
+  const ekho = ekhoAktiv ? calcEkho(isBruttoMod ? inputOssz : netto, munkaltadiRat) : null;
 
   const EFO_MAX_NAPI = 29700;
   const efoMaxNetto = EFO_MAX_NAPI * napok;
@@ -1335,12 +1460,25 @@ function calculate() {
     </div>`;
   evesEl.style.display = 'block';
 
-  // Bruttó mód tájékoztató
+  // Bruttó / órabér mód tájékoztató
   const bruttoInfoEl = document.getElementById('bruttoInfoSav');
   if (bruttoInfo) {
-    bruttoInfoEl.innerHTML = `
-      <div style="background:#EBF8FF;border:1.5px solid #90CDF4;border-radius:14px;padding:14px 20px;margin-bottom:18px;display:flex;align-items:center;flex-wrap:wrap;gap:16px;">
-        <div style="font-family:'Fira Code',monospace;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:#2B6CB0;flex-shrink:0;">Bruttó → Nettó átváltás</div>
+    const orabérFejlec = kalkulatorIrany === 'orabér'
+      ? (() => {
+          const orabér = parseFloat(document.getElementById('orabérInput').value) || 0;
+          const haviora = parseFloat(document.getElementById('havioraInput').value) || 174;
+          const tipusLabel = orabérTipus === 'netto' ? 'nettó' : 'bruttó';
+          return `<div style="font-family:'Fira Code',monospace;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:#2B6CB0;flex-shrink:0;">Órabér → Bruttó → Nettó</div>
+          <div style="display:flex;gap:20px;flex-wrap:wrap;font-size:13px;">
+            <span>${orabér.toLocaleString('hu-HU')} Ft/óra (${tipusLabel}) × ${haviora} óra = <strong style="font-family:'Fira Code',monospace">${fmt(bruttoInfo.brutto)}</strong> bruttó</span>
+            <span style="color:var(--ink3)">–</span>
+            <span>SZJA: <strong style="font-family:'Fira Code',monospace;color:#C53030">${fmt(bruttoInfo.szja)}</strong></span>
+            ${bruttoInfo.tb > 0 ? `<span style="color:var(--ink3)">–</span><span>TB: <strong style="font-family:'Fira Code',monospace;color:#C53030">${fmt(bruttoInfo.tb)}</strong></span>` : ''}
+            <span style="color:var(--ink3)">=</span>
+            <span>Nettó kézhez: <strong style="font-family:'Fira Code',monospace;color:#276749">${fmt(bruttoInfo.netto)}</strong></span>
+          </div>`;
+        })()
+      : `<div style="font-family:'Fira Code',monospace;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:#2B6CB0;flex-shrink:0;">Bruttó → Nettó átváltás</div>
         <div style="display:flex;gap:20px;flex-wrap:wrap;font-size:13px;">
           <span>Beírt bruttó: <strong style="font-family:'Fira Code',monospace">${fmt(bruttoInfo.brutto)}</strong></span>
           <span style="color:var(--ink3)">–</span>
@@ -1348,8 +1486,8 @@ function calculate() {
           ${bruttoInfo.tb > 0 ? `<span style="color:var(--ink3)">–</span><span>TB: <strong style="font-family:'Fira Code',monospace;color:#C53030">${fmt(bruttoInfo.tb)}</strong></span>` : ''}
           <span style="color:var(--ink3)">=</span>
           <span>Nettó kézhez: <strong style="font-family:'Fira Code',monospace;color:#276749">${fmt(bruttoInfo.netto)}</strong></span>
-        </div>
-      </div>`;
+        </div>`;
+    bruttoInfoEl.innerHTML = `<div style="background:#EBF8FF;border:1.5px solid #90CDF4;border-radius:14px;padding:14px 20px;margin-bottom:18px;display:flex;align-items:center;flex-wrap:wrap;gap:16px;">${orabérFejlec}</div>`;
     bruttoInfoEl.style.display = 'block';
   } else {
     bruttoInfoEl.style.display = 'none';
