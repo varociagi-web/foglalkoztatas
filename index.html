@@ -130,10 +130,37 @@
   .rec-title { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 17px; font-weight: 700; margin-bottom: 5px; }
   .rec-text { font-size: 13px; color: var(--ink2); line-height: 1.65; }
 
-  .cards-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 24px; }
-  @media (max-width: 800px) { .cards-grid { grid-template-columns: 1fr; } }
+  .cards-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 24px; }
+  @media (max-width: 1100px) { .cards-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 600px) { .cards-grid { grid-template-columns: 1fr; } }
 
-  .result-card {
+  .ekho-toggle-wrap {
+    display: flex; align-items: center; gap: 9px;
+    background: var(--bg2); border: 1.5px solid var(--border); border-radius: 10px;
+    padding: 10px 14px; cursor: pointer; transition: all 0.15s; height: 44px; box-sizing: border-box;
+  }
+  .ekho-toggle-wrap:hover { border-color: #9F7AEA; }
+  .ekho-toggle-wrap.active { background: #FAF5FF; border-color: #9F7AEA; }
+  .ekho-toggle-wrap input[type=checkbox] { accent-color: #6B46C1; width: 15px; height: 15px; flex-shrink: 0; cursor: pointer; }
+  #ekho-toggle-label { font-size: 12px; color: var(--ink2); line-height: 1.3; }
+  .card-ekho.winner { background: #FAF5FF; border-color: #9F7AEA; }
+  .card-ekho.winner::after { background: #6B46C1; color: white; }
+  .metric-value.kdv-sor { color: #276749; font-size: 12px; }
+  .metric-value.szja-fiz { color: var(--accent); font-weight: 600; }
+  .metric-value.muted { color: var(--ink3); font-size: 12px; }
+  .card-metric .metric-label { font-size: 11.5px; }
+
+  .csaladi-section {
+    background: #F0FFF4; border: 1.5px solid #9AE6B4;
+    border-radius: 16px; padding: 20px 24px; margin-top: 16px;
+  }
+  .csaladi-title { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 13px; font-weight: 700; color: #276749; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+  .csaladi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: end; }
+  @media (max-width: 600px) { .csaladi-grid { grid-template-columns: 1fr; } }
+  .eves-card { background: var(--bg2); border-radius: 12px; padding: 14px; text-align: center; }
+  .eves-card-label { font-size: 11px; color: var(--ink3); margin-bottom: 6px; }
+  .eves-card-val { font-family: 'Fira Code', monospace; font-size: 14px; font-weight: 600; color: var(--ink); }
+  .eves-card-sub { font-size: 11px; color: var(--ink3); margin-top: 4px; }
     background: var(--card); border: 1.5px solid var(--border); border-radius: 18px; padding: 22px;
     animation: slideIn 0.4s ease; position: relative; overflow: hidden;
     transition: transform 0.2s, box-shadow 0.2s;
@@ -179,6 +206,7 @@
   .bar-val { font-family: 'Fira Code', monospace; font-size: 12px; color: var(--ink); width: 105px; text-align: right; flex-shrink: 0; }
   .bar-munkaber .bar-fill { background: var(--accent); }
   .bar-megbizas .bar-fill { background: var(--accent2); }
+  .bar-ekho .bar-fill { background: #9F7AEA; }
   .bar-efo .bar-fill { background: var(--accent3); }
   @media (max-width: 500px) {
     .bar-label { width: 80px; font-size: 11px; }
@@ -202,9 +230,6 @@
   table.main-table td.num { font-family: 'Fira Code', monospace; font-size: 12px; text-align: right; }
   table.main-table tr.tr { }
   table.main-table tr.tr td { background: var(--bg); font-weight: 600; font-family: 'Fira Code', monospace; }
-
-  .cards-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 24px; }
-  @media (max-width: 800px) { .cards-grid { grid-template-columns: 1fr; } }
 
   .notes-section {
     background: var(--bg2); border-radius: 18px; padding: 18px 22px;
@@ -321,6 +346,20 @@
         </div>
       </div>
       <div class="field">
+        <label>Munkaidő (részmunkaidőhöz)</label>
+        <div class="input-suffix">
+          <input type="number" id="munkaidoInput" value="8" min="1" max="8" step="0.5">
+          <span>óra</span>
+        </div>
+      </div>
+      <div class="field">
+        <label>EKHO jogosultság</label>
+        <div class="ekho-toggle-wrap" id="ekho-toggle-wrap" onclick="document.getElementById('ekhoJogosult').click()">
+          <input type="checkbox" id="ekhoJogosult" onclick="event.stopPropagation()" onchange="frissitEkhoLathatosag()">
+          <span id="ekho-toggle-label">Nem jogosult — nem számítjuk</span>
+        </div>
+      </div>
+      <div class="field">
         <label>&nbsp;</label>
         <button class="calc-btn" onclick="calculate()">Kiszámít →</button>
       </div>
@@ -363,6 +402,32 @@
       <div class="kedvezmeny-tiltott-info" id="kedvezmenyTiltott"></div>
     </div>
 
+    <!-- Családi adókedvezmény -->
+    <div class="csaladi-section">
+      <div class="csaladi-title">👨‍👩‍👧 Családi adókedvezmény</div>
+      <div class="csaladi-grid">
+        <div class="field">
+          <label>Eltartott gyermekek száma</label>
+          <select id="gyermekSzam" onchange="frissitCsaladiKedvezmeny()">
+            <option value="0">Nincs / nem érvényesít</option>
+            <option value="1">1 gyermek — 1 × 20 000 Ft alap → 3 000 Ft SZJA</option>
+            <option value="2">2 gyermek — 2 × 40 000 Ft alap → 12 000 Ft SZJA</option>
+            <option value="3">3 gyermek — 3 × 66 000 Ft alap → 29 700 Ft SZJA</option>
+            <option value="4">4 gyermek — 4 × 66 000 Ft alap → 39 600 Ft SZJA</option>
+            <option value="5">5 gyermek — 5 × 66 000 Ft alap → 49 500 Ft SZJA</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Megosztás (másik szülő érvényesíti)</label>
+          <select id="gyermekMegosztás" onchange="frissitCsaladiKedvezmeny()">
+            <option value="1.0">Teljes összeget én érvényesítem</option>
+            <option value="0.5">50-50% megosztva</option>
+          </select>
+        </div>
+      </div>
+      <div id="csaladiInfo" style="display:none;margin-top:12px;padding:10px 14px;background:#276749;border-radius:10px;font-size:12px;color:white;"></div>
+    </div>
+
     <!-- EFO referencia táblázat -->
     <div class="efo-ref">
       <div class="efo-ref-title">📊 2026-os EFO Adatok — SukorADÓ adatbázis alapján · minimálbér: 322 800 Ft/hó</div>
@@ -385,7 +450,7 @@
   <div id="results">
     <div id="recommendation" class="recommendation"></div>
 
-    <div class="cards-grid">
+    <div class="cards-grid" id="cardsGrid">
       <div class="result-card card-munkaber" id="card-munkaber">
         <div class="card-type">01 · Munkabér</div>
         <div class="card-title">Hagyományos alkalmazott</div>
@@ -396,11 +461,21 @@
         <div class="card-title">Megbízási szerződés</div>
         <div id="megbizas-metrics"></div>
       </div>
+      <div class="result-card card-ekho" id="card-ekho" style="display:none">
+        <div class="card-type">03 · EKHO</div>
+        <div class="card-title">Egyszerűsített közteher</div>
+        <div id="ekho-metrics"></div>
+      </div>
       <div class="result-card card-efo" id="card-efo">
-        <div class="card-type">03 · EFO</div>
+        <div class="card-type">04 · EFO</div>
         <div class="card-title">Egyszerűsített foglalkoztatás</div>
         <div id="efo-metrics"></div>
       </div>
+    </div>
+
+    <div id="eves-osszesito" style="display:none;background:var(--card);border:1px solid var(--border);border-radius:18px;padding:20px 26px;margin-bottom:24px;animation:slideIn 0.4s ease;">
+      <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:15px;font-weight:700;margin-bottom:16px;">📅 Éves összesítés (× 12 hónap)</div>
+      <div id="eves-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;"></div>
     </div>
 
     <div class="chart-section">
@@ -499,6 +574,21 @@ const EFO = {
 function fmt(n) { return Math.round(n).toLocaleString('hu-HU') + ' Ft'; }
 function fmtN(n) { return Math.round(n).toLocaleString('hu-HU'); }
 
+function szjaBontasToSorok(szjaTeljes, szjaVegso, bontas, kulcsLabel) {
+  // Ha nincs kedvezmény, egy sima sor
+  if (!bontas || bontas.length === 0) {
+    return [{ l: 'Munkavállaló SZJA (' + kulcsLabel + ')', v: szjaVegso === 0 ? '— (nincs SZJA kötelezettség)' : '– ' + fmt(szjaVegso) }];
+  }
+  // Van kedvezmény: teljes SZJA, alá indentálva a levonások, végül a fizetendő
+  const sorok = [];
+  sorok.push({ l: 'SZJA alap (' + kulcsLabel + ')', v: fmt(szjaTeljes), muted: true });
+  bontas.forEach(t => {
+    sorok.push({ l: '  ↳ ' + t.nev, v: '– ' + fmt(t.osszeg), kdv: true });
+  });
+  sorok.push({ l: 'Fizetendő SZJA', v: szjaVegso === 0 ? '— (teljes mentesség)' : '– ' + fmt(szjaVegso), szjaFiz: true });
+  return sorok;
+}
+
 function updateEfoRef() {
   const sel = document.getElementById('efoType').value;
   const tbody = document.getElementById('efoRefBody');
@@ -527,8 +617,75 @@ function setIrany(irany) {
 
 const MINBER_HAVI = 322800;
 const JARULEK_ALAP_MIN = MINBER_HAVI * 0.30; // 96 840 Ft
-const SZJA_MENTES_HATAR = MINBER_HAVI * 2;   // 645 600 Ft — 25 év alatti / 30 év alatti anyák
-const SZEMELYI_KEDVEZMENY = MINBER_HAVI * 0.05; // ~16 140 Ft/hó adókedvezmény
+const SZJA_MENTES_HATAR = MINBER_HAVI * 2;   // 645 600 Ft
+const SZEMELYI_KEDVEZMENY = MINBER_HAVI * 0.05; // ~16 140 Ft/hó
+const NAPI_MUNKAIDО_TELJES = 8;
+const HAVI_MUNKAORA = 174;
+
+// Családi adóalap-kedvezmény 2026 — GYEREKENKÉNT értendő összeg
+// Az adóalap csökken ezzel, a tényleges SZJA megtakarítás = összeg × 15%
+const CSALADI_ALAPKDV_GYEREKENKENT = { 1: 20000, 2: 40000 }; // 1 vagy 2 gyereknél gyerekenként
+const CSALADI_ALAPKDV_3PLUS = 66000; // 3+ gyereknél gyerekenként
+
+// EKHO mérték 2026
+const EKHO_MERTEKE = 0.15; // 15% — munkáltató fizeti
+
+function frissitCsaladiKedvezmeny() {
+  const gyermek = parseInt(document.getElementById('gyermekSzam').value) || 0;
+  const megosztás = parseFloat(document.getElementById('gyermekMegosztás').value);
+  const infoEl = document.getElementById('csaladiInfo');
+  if (gyermek === 0) { infoEl.style.display = 'none'; return; }
+  const egységár = gyermek <= 2 ? (CSALADI_ALAPKDV_GYEREKENKENT[gyermek] || 20000) : CSALADI_ALAPKDV_3PLUS;
+  const alapKdv = egységár * gyermek;
+  const enyemAlap = Math.round(alapKdv * megosztás);
+  const szjaMegtakaritas = Math.round(enyemAlap * 0.15);
+  infoEl.innerHTML = `✓ Adóalap-kedvezmény: <strong>${enyemAlap.toLocaleString('hu-HU')} Ft/hó</strong> (${gyermek} × ${egységár.toLocaleString('hu-HU')} Ft) · SZJA megtakarítás: <strong>${szjaMegtakaritas.toLocaleString('hu-HU')} Ft/hó</strong> · Ha az SZJA nem fedezi, a TB-be is belenyúl.`;
+  infoEl.style.display = 'block';
+}
+
+function getCsaladiAlapKdv(gyermek) {
+  // Adóalap-kedvezmény összege (gyerekenként × gyerekszám)
+  if (gyermek <= 0) return 0;
+  const egységár = gyermek <= 2 ? (CSALADI_ALAPKDV_GYEREKENKENT[gyermek] || 20000) : CSALADI_ALAPKDV_3PLUS;
+  return egységár * gyermek;
+}
+
+function getCsaladiKedvezmeny() {
+  // Visszaad: tényleges SZJA megtakarítás = adóalap-kedvezmény × 15%
+  const gyermek = parseInt(document.getElementById('gyermekSzam').value) || 0;
+  const megosztás = parseFloat(document.getElementById('gyermekMegosztás').value);
+  const alapKdv = getCsaladiAlapKdv(gyermek);
+  return Math.round(alapKdv * megosztás * TAX.szja);
+}
+
+function frissitEkhoLathatosag() {
+  const jogosult = document.getElementById('ekhoJogosult').checked;
+  document.getElementById('ekho-toggle-wrap').classList.toggle('active', jogosult);
+  document.getElementById('ekho-toggle-label').textContent = jogosult
+    ? 'Jogosult — EKHO számítás aktív'
+    : 'Nem jogosult — nem számítjuk';
+  // Eredményeket töröljük hogy újra kelljen számolni
+  document.getElementById('results').classList.remove('visible');
+  document.getElementById('eves-osszesito').style.display = 'none';
+}
+
+function isEkhoJogosult() {
+  return document.getElementById('ekhoJogosult').checked;
+}
+
+function calcEkho(netto) {
+  // EKHO: munkáltató fizet 15%-ot a díj után, munkavállalónak nincs további köztehre
+  // (az EKHO-s jövedelmet a munkáltató fizeti be, dolgozónak nettó = bruttó)
+  const ekhoOssz = netto * EKHO_MERTEKE;
+  return {
+    brutto: netto,
+    netto: netto,
+    szja: 0,
+    tb: 0,
+    ekhoOssz,
+    munkaltOssz: netto + ekhoOssz,
+  };
+}
 
 function frissitKedvezmenyElerheto() {
   const isNyugdijas = document.getElementById('munkavStatusz').value === 'nyugdijas';
@@ -601,12 +758,15 @@ function updateKedvezmenyInfo() {
 }
 
 function getSzjaKedvezmeny(brutto, szjaAlap) {
-  return _szjaKedvezmenyAlap(szjaAlap);
+  return _szjaKedvezmenyAlap(szjaAlap).szja;
 }
 
 function getSzjaKedvezmenyMegbizas(szjaAlap90) {
-  // Megbízásnál az alap már a 90%-os összeg (ktghányad után)
-  return _szjaKedvezmenyAlap(szjaAlap90);
+  return _szjaKedvezmenyAlap(szjaAlap90).szja;
+}
+
+function getCsaladiTbAtmenet(szjaAlap) {
+  return _szjaKedvezmenyAlap(szjaAlap).csaladiTbAtmenet;
 }
 
 function _szjaKedvezmenyAlap(alap) {
@@ -614,45 +774,81 @@ function _szjaKedvezmenyAlap(alap) {
   const kdv30 = document.getElementById('kdv30').checked;
   const netak = document.getElementById('kdvNetak').checked;
   const szemelyi = document.getElementById('kdvSzemelyi').checked;
+  const csaladiKdv = getCsaladiKedvezmeny();
 
-  let szja = alap * TAX.szja;
+  const szjaTeljes = alap * TAX.szja;
+  let szja = szjaTeljes;
+  const tetelekBontasa = []; // { nev, osszeg }
 
   if (netak) {
+    tetelekBontasa.push({ nev: 'NÉTAK mentesség', osszeg: szjaTeljes });
     szja = 0;
   } else if (kdv25 || kdv30) {
-    const mentes = Math.min(alap, SZJA_MENTES_HATAR);
-    const adozott = Math.max(0, alap - SZJA_MENTES_HATAR);
-    szja = adozott * TAX.szja;
+    const mentesAlap = Math.min(alap, SZJA_MENTES_HATAR);
+    const kdvOssz = mentesAlap * TAX.szja;
+    tetelekBontasa.push({ nev: kdv25 ? '25 év alatti mentesség' : '30 év alatti anyák', osszeg: kdvOssz });
+    szja = Math.max(0, alap - SZJA_MENTES_HATAR) * TAX.szja;
   }
 
   if (szemelyi && !netak) {
-    szja = Math.max(0, szja - SZEMELYI_KEDVEZMENY);
+    const levon = Math.min(szja, SZEMELYI_KEDVEZMENY);
+    if (levon > 0) {
+      tetelekBontasa.push({ nev: 'Személyi kedvezmény', osszeg: levon });
+      szja = Math.max(0, szja - levon);
+    }
   }
 
-  return szja;
+  let csaladiTbAtmenet = 0;
+  if (csaladiKdv > 0) {
+    const levonSzja = Math.min(szja, csaladiKdv);
+    if (levonSzja > 0) {
+      tetelekBontasa.push({ nev: 'Családi adókedvezmény', osszeg: levonSzja });
+      szja = Math.max(0, szja - levonSzja);
+    }
+    csaladiTbAtmenet = Math.max(0, csaladiKdv - levonSzja);
+    if (csaladiTbAtmenet > 0) {
+      tetelekBontasa.push({ nev: 'Családi kedvezmény (TB-ből)', osszeg: csaladiTbAtmenet });
+    }
+  }
+
+  return { szja, szjaTeljes, tetelekBontasa, csaladiTbAtmenet };
+}
+
+function getReszMunkaidoArany() {
+  const ora = parseFloat(document.getElementById('munkaidoInput').value) || 8;
+  return Math.min(ora, 8) / 8;
 }
 
 function calcMunkaber(netto, munkaltadiRat, munkavTBRat) {
-  // Iteratív bruttó visszaszámítás, mert a SZJA kedvezmény a bruttótól függ
-  let brutto = netto / (1 - munkavTBRat - TAX.szja); // kiindulópont
+  const arany = getReszMunkaidoArany();
+  // Részmunkaidőnél a járulékalap minimum is arányos
+  const jarulekAlapMinAranyos = JARULEK_ALAP_MIN * arany;
+
+  let brutto = netto / (1 - munkavTBRat - TAX.szja);
   let jarulek_alap, szja, tb, jarulekAlapMinAlkalmaz = false;
 
   for (let i = 0; i < 50; i++) {
-    jarulek_alap = (munkavTBRat > 0 && brutto < JARULEK_ALAP_MIN) ? JARULEK_ALAP_MIN : brutto;
-    jarulekAlapMinAlkalmaz = (munkavTBRat > 0 && brutto < JARULEK_ALAP_MIN);
+    jarulek_alap = (munkavTBRat > 0 && brutto < jarulekAlapMinAranyos) ? jarulekAlapMinAranyos : brutto;
+    jarulekAlapMinAlkalmaz = (munkavTBRat > 0 && brutto < jarulekAlapMinAranyos);
     szja = getSzjaKedvezmeny(brutto, jarulek_alap);
     tb = jarulek_alap * munkavTBRat;
-    const bruttoUj = netto + szja + tb;
+    // TB-be nyúlás
+    const tbAtmenet = getCsaladiTbAtmenet(jarulek_alap);
+    const tbTeny = Math.max(0, tb - tbAtmenet);
+    const bruttoUj = netto + szja + tbTeny;
     if (Math.abs(bruttoUj - brutto) < 0.5) { brutto = bruttoUj; break; }
     brutto = bruttoUj;
   }
 
-  jarulek_alap = (munkavTBRat > 0 && brutto < JARULEK_ALAP_MIN) ? JARULEK_ALAP_MIN : brutto;
-  jarulekAlapMinAlkalmaz = (munkavTBRat > 0 && brutto < JARULEK_ALAP_MIN);
-  szja = getSzjaKedvezmeny(brutto, jarulek_alap);
+  jarulek_alap = (munkavTBRat > 0 && brutto < jarulekAlapMinAranyos) ? jarulekAlapMinAranyos : brutto;
+  jarulekAlapMinAlkalmaz = (munkavTBRat > 0 && brutto < jarulekAlapMinAranyos);
+  const szjaBontas = _szjaKedvezmenyAlap(jarulek_alap);
+  szja = szjaBontas.szja;
   tb = jarulek_alap * munkavTBRat;
+  const tbAtmenet = szjaBontas.csaladiTbAtmenet;
+  const tbTeny = Math.max(0, tb - tbAtmenet);
   const munkaltAdo = jarulek_alap * munkaltadiRat;
-  return { brutto, jarulek_alap, szja, tb, munkaltAdo, munkaltOssz: brutto + munkaltAdo, netto, jarulekAlapMinAlkalmaz };
+  return { brutto, jarulek_alap, szja, szjaTeljes: szjaBontas.szjaTeljes, szjaBontas: szjaBontas.tetelekBontasa, tb: tbTeny, tbAtmenet, munkaltAdo, munkaltOssz: brutto + munkaltAdo, netto, jarulekAlapMinAlkalmaz, arany };
 }
 
 function calcMegbizas(netto, munkaltadiRat, munkavTBRat, tartos) {
@@ -727,8 +923,9 @@ function calcMegbizas(netto, munkaltadiRat, munkavTBRat, tartos) {
     }
   }
 
-  const szja = getSzjaKedvezmenyMegbizas(jarulek_alap * (1 - TAX.koltsegalany));
-  return { brutto: dij, jarulek_alap, szja, tb, munkaltAdo, munkaltOssz: dij + munkaltAdo, netto, nemBiztositott, tartosBiztAlkalmaz };
+  const szjaBontasMb = _szjaKedvezmenyAlap(jarulek_alap * (1 - TAX.koltsegalany));
+  const szja = szjaBontasMb.szja;
+  return { brutto: dij, jarulek_alap, szja, szjaTeljes: szjaBontasMb.szjaTeljes, szjaBontas: szjaBontasMb.tetelekBontasa, tb, munkaltAdo, munkaltOssz: dij + munkaltAdo, netto, nemBiztositott, tartosBiztAlkalmaz };
 }
 
 function calcEfo(netto, napok, efoKey) {
@@ -764,11 +961,12 @@ function calcMunkaberBruttobol(brutto, munkaltadiRat, munkavTBRat) {
   // Bruttóból számolunk egyenesen — nincs visszaszámítás
   const jarulek_alap = (munkavTBRat > 0 && brutto < JARULEK_ALAP_MIN) ? JARULEK_ALAP_MIN : brutto;
   const jarulekAlapMinAlkalmaz = (munkavTBRat > 0 && brutto < JARULEK_ALAP_MIN);
-  const szja = getSzjaKedvezmeny(brutto, jarulek_alap);
+  const szjaBontas = _szjaKedvezmenyAlap(jarulek_alap);
+  const szja = szjaBontas.szja;
   const tb = jarulek_alap * munkavTBRat;
   const munkaltAdo = jarulek_alap * munkaltadiRat;
   const netto = brutto - szja - tb;
-  return { brutto, jarulek_alap, szja, tb, munkaltAdo, munkaltOssz: brutto + munkaltAdo, netto, jarulekAlapMinAlkalmaz };
+  return { brutto, jarulek_alap, szja, szjaTeljes: szjaBontas.szjaTeljes, szjaBontas: szjaBontas.tetelekBontasa, tb, munkaltAdo, munkaltOssz: brutto + munkaltAdo, netto, jarulekAlapMinAlkalmaz };
 }
 
 function calcMegbizasBruttobol(brutto, munkaltadiRat, munkavTBRat, tartos) {
@@ -797,9 +995,10 @@ function calcMegbizasBruttobol(brutto, munkaltadiRat, munkavTBRat, tartos) {
     }
   }
 
-  const szja = getSzjaKedvezmenyMegbizas(jarulek_alap * (1 - TAX.koltsegalany));
+  const szjaBontasMbB = _szjaKedvezmenyAlap(jarulek_alap * (1 - TAX.koltsegalany));
+  const szja = szjaBontasMbB.szja;
   const netto = brutto - szja - tb;
-  return { brutto, jarulek_alap, szja, tb, munkaltAdo, munkaltOssz: brutto + munkaltAdo, netto, nemBiztositott, tartosBiztAlkalmaz };
+  return { brutto, jarulek_alap, szja, szjaTeljes: szjaBontasMbB.szjaTeljes, szjaBontas: szjaBontasMbB.tetelekBontasa, tb, munkaltAdo, munkaltOssz: brutto + munkaltAdo, netto, nemBiztositott, tartosBiztAlkalmaz };
 }
 
 function calculate() {
@@ -834,6 +1033,8 @@ function calculate() {
 
   const efoNetto = kalkulatorIrany === 'brutto' ? inputOssz : netto;
   const e = calcEfo(efoNetto, napok, efoKey);
+  const ekhoAktiv = isEkhoJogosult();
+  const ekho = ekhoAktiv ? calcEkho(kalkulatorIrany === 'brutto' ? inputOssz : netto, munkaltadiRat) : null;
 
   const EFO_MAX_NAPI = 29700;
   const efoMaxNetto = EFO_MAX_NAPI * napok;
@@ -842,6 +1043,7 @@ function calculate() {
   const costs = [
     { key: 'munkaber', label: 'Munkabér', cost: m.munkaltOssz },
     { key: 'megbizas', label: 'Megbízás', cost: mb.munkaltOssz },
+    ...(ekhoAktiv ? [{ key: 'ekho', label: 'EKHO', cost: ekho.munkaltOssz }] : []),
     ...(!efoNemLehetseges ? [{ key: 'efo', label: 'EFO', cost: e.munkaltOssz }] : []),
   ].sort((a, b) => a.cost - b.cost);
   const winner = costs[0].key;
@@ -863,12 +1065,11 @@ function calculate() {
       const tbSor = isNyugdijas
         ? { l: 'Munkavállaló TB járulék', v: '— (nyugdíjas, mentes)' }
         : { l: 'Munkavállaló TB járulék (18,5%)', v: '– ' + fmt(data.tb) };
-      const kdvAktiv = document.getElementById('kdv25').checked || document.getElementById('kdv30').checked || document.getElementById('kdvNetak').checked || document.getElementById('kdvSzemelyi').checked;
-      const szjaSor = { l: 'Munkavállaló SZJA' + (kdvAktiv ? ' (kedvezménnyel)' : ' (15%)'), v: data.szja === 0 ? '— (teljes mentesség)' : '– ' + fmt(data.szja) };
+      const szjaSorok = szjaBontasToSorok(data.szjaTeljes, data.szja, data.szjaBontas, '15%');
       sorok = [
         { l: 'Bruttó bér', v: fmt(data.brutto) },
         ...jarulekAlapSor,
-        szjaSor,
+        ...szjaSorok,
         tbSor,
         { l: 'Nettó kézhez', v: fmt(data.netto), h: true },
         { l: 'Munkáltatói ' + (isNyugdijas ? 'járulék' : munkaltadiLabel), v: isNyugdijas ? '— (nyugdíjas, mentes)' : fmt(data.munkaltAdo) },
@@ -897,12 +1098,12 @@ function calculate() {
       const munkaltSor = mb.nemBiztositott
         ? { l: 'Munkáltatói járulék', v: '— (nem biztosított)' }
         : { l: 'Munkáltatói ' + munkaltadiLabel, v: fmt(data.munkaltAdo) };
-      const kdvAktivMb = document.getElementById('kdv25').checked || document.getElementById('kdv30').checked || document.getElementById('kdvNetak').checked || document.getElementById('kdvSzemelyi').checked;
+      const szjaSorokMb = szjaBontasToSorok(data.szjaTeljes, data.szja, data.szjaBontas, '90% × 15%');
       sorok = [
         { l: 'Megbízási díj (bruttó)', v: fmt(data.brutto) },
         biztStatusz,
         ...tartosSor,
-        { l: 'Munkavállaló SZJA (90%' + (kdvAktivMb ? ', kedvezménnyel)' : ' × 15%)'), v: data.szja === 0 ? '— (teljes mentesség)' : '– ' + fmt(data.szja) },
+        ...szjaSorokMb,
         tbSor,
         { l: 'Nettó kézhez', v: fmt(data.netto), h: true },
         munkaltSor,
@@ -911,7 +1112,16 @@ function calculate() {
     }
 
     document.getElementById(t + '-metrics').innerHTML = sorok
-      .map(r => `<div class="card-metric"><div class="metric-label">${r.l}</div><div class="metric-value${r.h?' highlight':''}${r.muted?' muted':''}${r.w?' warn':''}">${r.v}</div></div>`)
+      .map(r => {
+        let valClass = 'metric-value';
+        if (r.h) valClass += ' highlight';
+        if (r.muted) valClass += ' muted';
+        if (r.w) valClass += ' warn';
+        if (r.kdv) valClass += ' kdv-sor';
+        if (r.szjaFiz) valClass += ' szja-fiz';
+        const rowStyle = r.kdv ? ' style="background:var(--bg2);border-radius:6px;margin:1px 0;"' : '';
+        return `<div class="card-metric"${rowStyle}><div class="metric-label">${r.l}</div><div class="${valClass}">${r.v}</div></div>`;
+      })
       .join('');
   });
 
@@ -993,13 +1203,49 @@ function calculate() {
   }
   } // end !efoNemLehetseges
 
+  // EKHO kártya — csak ha jogosult
+  const csaladiKdvOssz = getCsaladiKedvezmeny();
+  document.getElementById('card-ekho').style.display = ekhoAktiv ? '' : 'none';
+  if (ekhoAktiv) {
+    document.getElementById('card-ekho').classList.toggle('winner', winner === 'ekho');
+    document.getElementById('ekho-metrics').innerHTML = [
+      { l: 'Megbízási díj (bruttó = nettó)', v: fmt(ekho.brutto) },
+      { l: 'Munkavállaló SZJA / TB', v: '— (EKHO kiváltja)' },
+      { l: 'Nettó kézhez', v: fmt(ekho.netto), h: true },
+      { l: 'EKHO közteher (15%)', v: fmt(ekho.ekhoOssz) },
+      { l: 'Munkáltató összköltsége', v: fmt(ekho.munkaltOssz) },
+    ].map(r => `<div class="card-metric"><div class="metric-label">${r.l}</div><div class="metric-value${r.h?' highlight':''}">${r.v}</div></div>`).join('') +
+    `<div style="background:#FAF5FF;border:1px solid #D6BCFA;border-radius:8px;padding:9px 12px;font-size:11.5px;color:#553C9A;margin-top:10px;line-height:1.6;">
+      ℹ️ EKHO csak meghatározott tevékenységeknél alkalmazható (előadóművész, sportoló, újságíró, stb.). Évi max. 60 M Ft jövedelmig.
+    </div>`;
+  }
+
+  // Részmunkaidő jelzés a munkabér kártyán
+  const arany = getReszMunkaidoArany();
+  if (arany < 1) {
+    const ora = parseFloat(document.getElementById('munkaidoInput').value);
+    document.getElementById('munkaber-metrics').innerHTML +=
+      `<div style="background:#EBF8FF;border:1px solid #90CDF4;border-radius:8px;padding:8px 12px;font-size:11.5px;color:#2B6CB0;margin-top:8px;">
+        ⏱️ Részmunkaidő: ${ora} óra/nap — járulékalap minimum arányosítva (${fmt(JARULEK_ALAP_MIN * arany)}/hó)
+      </div>`;
+  }
+
+  // Családi adókedvezmény TB-be nyúlás jelzése
+  if (csaladiKdvOssz > 0 && m.tbAtmenet > 0) {
+    document.getElementById('munkaber-metrics').innerHTML +=
+      `<div style="background:#F0FFF4;border:1px solid #9AE6B4;border-radius:8px;padding:8px 12px;font-size:11.5px;color:#276749;margin-top:8px;">
+        👨‍👩‍👧 Adóvisszatérítés: a ${fmt(csaladiKdvOssz)} családi kedvezményből ${fmt(m.szja > 0 ? 0 : csaladiKdvOssz - (m.szja + csaladiKdvOssz))} SZJA-ból, ${fmt(m.tbAtmenet)} TB-ből kerül levonásra.
+      </div>`;
+  }
+
   // Ajánlás
   const megtakaritas = costs.length > 1 ? costs[1].cost - costs[0].cost : 0;
   const recEl = document.getElementById('recommendation');
   const recData = {
-    munkaber: { icon: '💼', title: 'Munkabér a leggazdaságosabb', text: `Ennél a nettó szintnél a hagyományos munkabér kerül a legkevesebbe a munkáltatónak.${efoNemLehetseges ? ' (EFO nem alkalmazható: a nettó meghaladja a ' + fmt(EFO_MAX_NAPI * napok) + ' Ft-os max. korlátot.)' : ''}` },
-    megbizas: { icon: '📋', title: 'Megbízás a leggazdaságosabb', text: `A 10%-os költségátalánynak köszönhetően a megbízási forma most olcsóbb.${efoNemLehetseges ? ' (EFO nem alkalmazható: a nettó meghaladja a ' + fmt(EFO_MAX_NAPI * napok) + ' Ft-os max. korlátot.)' : ''}` },
-    efo:      { icon: '⚡', title: 'EFO a leggazdaságosabb', text: `${e.label} esetén a munkáltatói közteher ${fmt(e.kozteher)} (${napok} nap × ${fmtN(e.kozteherPerNap)} Ft). Ez a legolcsóbb, de max 15 nap/hó és 120 nap/év korlátot figyeljen!` },
+    munkaber: { icon: '💼', title: 'Munkabér a leggazdaságosabb', text: `Ennél a szintnél a hagyományos munkabér kerül a legkevesebbe a munkáltatónak.${efoNemLehetseges ? ' (EFO nem alkalmazható: meghaladja a ' + fmt(EFO_MAX_NAPI * napok) + ' Ft-os max. korlátot.)' : ''}` },
+    megbizas: { icon: '📋', title: 'Megbízás a leggazdaságosabb', text: `A 10%-os költségátalánynak köszönhetően a megbízási forma most olcsóbb.${efoNemLehetseges ? ' (EFO nem alkalmazható.)' : ''}` },
+    ekho:     { icon: '🟣', title: 'EKHO a leggazdaságosabb', text: `A 15%-os EKHO most a legolcsóbb megoldás. Figyelem: csak meghatározott tevékenységeknél alkalmazható!` },
+    efo:      { icon: '⚡', title: 'EFO a leggazdaságosabb', text: `${e.label} esetén a munkáltatói közteher ${fmt(e.kozteher)} (${napok} nap × ${fmtN(e.kozteherPerNap)} Ft). Max 15 nap/hó és 120 nap/év korlátot figyeljen!` },
   }[winner];
   recEl.className = 'recommendation best-' + winner;
   recEl.innerHTML = `<div class="rec-icon">${recData.icon}</div><div>
@@ -1025,31 +1271,69 @@ function calculate() {
   const mbTbVal = mb.nemBiztositott ? null : (isNyugdijas ? 0 : -mb.tb);
   const mbMunkaltVal = mb.nemBiztositott ? null : mb.munkaltAdo;
   const jarulekAlapSorTabla = m.jarulekAlapMinAlkalmaz
-    ? [{ l: '⚠️ Járulékalap min. (30% = ' + fmt(JARULEK_ALAP_MIN) + ')', m: m.jarulek_alap, mb: null, e: null, info: true }]
+    ? [{ l: '⚠️ Járulékalap min. (30% = ' + fmt(JARULEK_ALAP_MIN) + ')', m: m.jarulek_alap, mb: null, ek: null, e: null, info: true }]
     : [];
   const megbizasNemBiztInfo = mb.nemBiztositott
-    ? [{ l: 'ℹ️ Megbízás: nem biztosított (díj < ' + fmt(JARULEK_ALAP_MIN) + ')', m: null, mb: null, e: null, info2: true }]
+    ? [{ l: 'ℹ️ Megbízás: nem biztosított (díj < ' + fmt(JARULEK_ALAP_MIN) + ')', m: null, mb: null, ek: null, e: null, info2: true }]
     : [];
   const eTabla = efoNemLehetseges ? null : e;
+
+  // Táblázat fejléc — EKHO oszlop dinamikusan
+  const ekhoThEl = document.getElementById('ekhoColHeader');
+  if (ekhoAktiv && !ekhoThEl) {
+    const th = document.createElement('th');
+    th.id = 'ekhoColHeader';
+    th.style.textAlign = 'right';
+    th.textContent = 'EKHO';
+    document.getElementById('efoColHeader').before(th);
+  } else if (!ekhoAktiv && ekhoThEl) {
+    ekhoThEl.remove();
+  }
+
   const tableRows = [
-    { l: 'Bruttó bér / megbízási díj / nettó bér', m: m.brutto, mb: mb.brutto, e: eTabla ? eTabla.netto : null },
+    { l: 'Bruttó / díj / kifizetett összeg',   m: m.brutto,      mb: mb.brutto,      ek: ekho?.brutto,       e: eTabla ? eTabla.netto : null },
     ...jarulekAlapSorTabla,
     ...megbizasNemBiztInfo,
-    { l: '— Munkavállaló SZJA',                    m: -m.szja,  mb: -mb.szja,  e: 0 },
-    { l: tbLabel,                                   m: isNyugdijas ? 0 : -m.tb, mb: mbTbVal, e: 0 },
-    { l: '= Nettó kézhez',                          m: m.netto,    mb: mb.netto,     e: e.netto, t: true },
-    { l: '+ Munkáltatói járulék / EFO közteher',   m: m.munkaltAdo, mb: mbMunkaltVal, e: eTabla ? eTabla.kozteher : null },
-    { l: '= Munkáltató összköltsége',               m: m.munkaltOssz, mb: mb.munkaltOssz, e: eTabla ? eTabla.munkaltOssz : null, t: true },
-    { l: 'Hatékonyság (nettó / összkölts.)',        m: null, mb: null, e: null, pct: true,
-      mP: m.netto/m.munkaltOssz, mbP: mb.netto/mb.munkaltOssz, eP: eTabla ? e.netto/eTabla.munkaltOssz : null },
+    { l: '— Munkavállaló SZJA',                m: -m.szja,       mb: -mb.szja,       ek: ekho ? 0 : null,    e: 0 },
+    { l: tbLabel,                              m: isNyugdijas ? 0 : -m.tb, mb: mbTbVal, ek: ekho ? 0 : null, e: 0 },
+    { l: '= Nettó kézhez',                     m: m.netto,       mb: mb.netto,       ek: ekho?.netto,        e: eTabla ? e.netto : null, t: true },
+    { l: '+ Munkáltatói járulék / közteher',   m: m.munkaltAdo,  mb: mbMunkaltVal,   ek: ekho?.ekhoOssz,     e: eTabla ? eTabla.kozteher : null },
+    { l: '= Munkáltató összköltsége',          m: m.munkaltOssz, mb: mb.munkaltOssz, ek: ekho?.munkaltOssz,  e: eTabla ? eTabla.munkaltOssz : null, t: true },
+    { l: 'Hatékonyság (nettó / összkölts.)',   m: null, mb: null, ek: null, e: null, pct: true,
+      mP: m.netto/m.munkaltOssz, mbP: mb.netto/mb.munkaltOssz,
+      ekP: ekho ? ekho.netto/ekho.munkaltOssz : null,
+      eP: eTabla ? e.netto/eTabla.munkaltOssz : null },
   ];
+
   document.getElementById('tableBody').innerHTML = tableRows.map(r => {
     const tc = r.t ? ' class="tr"' : r.info ? ' style="background:#FFF5F5"' : r.info2 ? ' style="background:#EBF8FF"' : '';
     const dc = r.t ? ' tr' : '';
-    if (r.pct) return `<tr${tc}><td class="rl${dc}">${r.l}</td><td class="num${dc}">${(r.mP*100).toFixed(1)}%</td><td class="num${dc}">${(r.mbP*100).toFixed(1)}%</td><td class="num${dc}">${r.eP !== null ? (r.eP*100).toFixed(1)+'%' : '<span style="color:#C53030;font-size:11px">N/A</span>'}</td></tr>`;
-    const f = v => v === null ? '<span style="color:#718096;font-style:italic;font-size:11px">—</span>' : v < 0 ? `<span style="color:var(--accent)">– ${fmt(Math.abs(v))}</span>` : v === 0 ? '—' : fmt(v);
-    return `<tr${tc}><td class="rl${dc}">${r.l}</td><td class="num${dc}" style="${r.info?'color:#C53030;font-weight:600':''}">${f(r.m)}</td><td class="num${dc}" style="${r.info2?'color:#2B6CB0;font-size:11px':''}colspan="${r.info2?3:1}">${f(r.mb)}</td><td class="num${dc}">${f(r.e)}</td></tr>`;
+    const f = v => v === null || v === undefined ? '<span style="color:#718096;font-style:italic;font-size:11px">—</span>' : v < 0 ? `<span style="color:var(--accent)">– ${fmt(Math.abs(v))}</span>` : v === 0 ? '—' : fmt(v);
+    const ekhoTd = ekhoAktiv ? `<td class="num${dc}">${r.pct ? (r.ekP !== null ? (r.ekP*100).toFixed(1)+'%' : '—') : f(r.ek)}</td>` : '';
+    if (r.pct) return `<tr${tc}><td class="rl${dc}">${r.l}</td><td class="num${dc}">${(r.mP*100).toFixed(1)}%</td><td class="num${dc}">${(r.mbP*100).toFixed(1)}%</td>${ekhoTd}<td class="num${dc}">${r.eP !== null ? (r.eP*100).toFixed(1)+'%' : '<span style="color:#C53030;font-size:11px">N/A</span>'}</td></tr>`;
+    return `<tr${tc}><td class="rl${dc}">${r.l}</td><td class="num${dc}">${f(r.m)}</td><td class="num${dc}">${f(r.mb)}</td>${ekhoTd}<td class="num${dc}">${f(r.e)}</td></tr>`;
   }).join('');
+
+  // Éves összesítő
+  const evesEl = document.getElementById('eves-osszesito');
+  const evesGrid = document.getElementById('eves-grid');
+  const evesCosts = costs.map(c => {
+    const evi = c.cost * 12;
+    return `<div class="eves-card">
+      <div class="eves-card-label">${c.label}</div>
+      <div class="eves-card-val">${fmt(evi)}</div>
+      <div class="eves-card-sub">${fmt(c.cost)}/hó × 12</div>
+    </div>`;
+  });
+  // Megtakarítás az éves szinten
+  const evesMegtakaritas = costs.length > 1 ? (costs[1].cost - costs[0].cost) * 12 : 0;
+  evesGrid.innerHTML = evesCosts.join('') +
+    `<div class="eves-card" style="background:#EBF8FF;border:1px solid #90CDF4;">
+      <div class="eves-card-label">Megtakarítás (1. vs 2.)</div>
+      <div class="eves-card-val" style="color:#2B6CB0;">${fmt(evesMegtakaritas)}</div>
+      <div class="eves-card-sub">${fmt(costs.length > 1 ? costs[1].cost - costs[0].cost : 0)}/hó × 12</div>
+    </div>`;
+  evesEl.style.display = 'block';
 
   // Bruttó mód tájékoztató
   const bruttoInfoEl = document.getElementById('bruttoInfoSav');
