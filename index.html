@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Foglalkoztatási Forma Kalkulátor 2026</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #F2EFE9;
+    --bg2: #E8E3DA;
+    --ink: #1A1714;
+    --ink2: #4A4540;
+    --ink3: #8A8178;
+    --accent: #C4521A;
+    --accent2: #2B6CB0;
+    --accent3: #276749;
+    --card: #FDFCFA;
+    --border: #D4CEC5;
+    --shadow: rgba(26,23,20,0.08);
+  }
+
+  body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); color: var(--ink); min-height: 100vh; }
+
+  header {
+    background: var(--card);
+    border-bottom: 2px solid var(--border);
+    padding: 36px 48px 32px; position: relative; overflow: hidden;
+  }
+  header::before {
+    content: ''; position: absolute; right: -60px; top: -60px;
+    width: 320px; height: 320px; border-radius: 50%; background: var(--accent); opacity: 0.06;
+  }
+  header::after {
+    content: ''; position: absolute; left: -30px; bottom: -80px;
+    width: 200px; height: 200px; border-radius: 50%; background: var(--accent2); opacity: 0.05;
+  }
+  .header-badge {
+    display: inline-block; font-family: 'Fira Code', monospace;
+    font-size: 11px; letter-spacing: 2px; text-transform: uppercase;
+    color: var(--accent); border: 1px solid var(--accent);
+    padding: 4px 10px; border-radius: 6px; margin-bottom: 16px;
+  }
+  header h1 { font-family: 'Plus Jakarta Sans', sans-serif; font-size: clamp(22px, 4vw, 40px); font-weight: 800; line-height: 1.1; position: relative; color: var(--ink); }
+  header p { margin-top: 10px; font-size: 14px; color: var(--ink3); font-weight: 300; position: relative; }
+  .header-credit {
+    margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border);
+    display: flex; align-items: center; gap: 10px; position: relative;
+  }
+  .header-credit-logo {
+    font-family: 'Plus Jakarta Sans', sans-serif; font-size: 15px; font-weight: 800;
+    color: var(--accent); letter-spacing: -0.3px;
+  }
+  .header-credit-logo span { color: var(--ink2); font-weight: 400; font-size: 13px; }
+  .header-credit-sep { color: var(--border); font-size: 18px; }
+  .header-credit-name { font-size: 13px; color: var(--ink2); font-weight: 400; }
+  .header-credit-name strong { color: var(--ink); font-weight: 600; }
+
+  main { max-width: 1120px; margin: 0 auto; padding: 40px 24px 80px; }
+
+  .input-section {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 20px; padding: 32px; margin-bottom: 28px;
+    box-shadow: 0 4px 20px var(--shadow);
+  }
+  .section-label {
+    font-family: 'Fira Code', monospace; font-size: 11px;
+    letter-spacing: 2px; text-transform: uppercase; color: var(--ink3); margin-bottom: 20px;
+  }
+  .input-grid { display: grid; grid-template-columns: 1.2fr 1fr 1fr 1fr 1.4fr 0.9fr 0.9fr; gap: 14px; align-items: end; }
+  @media (max-width: 1100px) { .input-grid { grid-template-columns: 1fr 1fr 1fr 1fr; } header { padding: 24px 20px; } main { padding: 24px 16px 60px; } }
+  @media (max-width: 700px) { .input-grid { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 400px) { .input-grid { grid-template-columns: 1fr; } }
+
+  .field label { display: block; font-size: 12.5px; font-weight: 500; color: var(--ink2); margin-bottom: 7px; }
+  .field input, .field select {
+    width: 100%; padding: 11px 13px; border: 1.5px solid var(--border); border-radius: 12px;
+    font-family: 'Fira Code', monospace; font-size: 14px; background: var(--bg); color: var(--ink);
+    outline: none; transition: border-color 0.2s;
+  }
+  .field input:focus, .field select:focus { border-color: var(--accent); background: var(--card); }
+  .input-suffix { position: relative; }
+  .input-suffix input { padding-right: 46px; }
+  .input-suffix span { position: absolute; right: 11px; top: 50%; transform: translateY(-50%); font-family: 'Fira Code', monospace; font-size: 12px; color: var(--ink3); }
+
+  .calc-btn {
+    background: var(--ink); color: var(--bg); border: none; border-radius: 12px;
+    padding: 12px 18px; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 14px; font-weight: 700;
+    cursor: pointer; transition: background 0.2s, transform 0.1s; width: 100%;
+  }
+  .calc-btn:hover { background: var(--accent); transform: translateY(-1px); }
+
+  /* EFO reference table */
+  .efo-ref {
+    background: #F0FFF4; border: 1px solid #9AE6B4; border-radius: 10px;
+    padding: 14px 16px; margin-top: 18px;
+  }
+  .efo-ref-title {
+    font-family: 'Fira Code', monospace; font-size: 10px;
+    letter-spacing: 1.5px; text-transform: uppercase; color: var(--accent3); margin-bottom: 10px;
+  }
+  .efo-ref table { width: 100%; border-collapse: collapse; }
+  .efo-ref th { font-family: 'Fira Code', monospace; font-size: 10px; letter-spacing: 1px; text-transform: uppercase; color: var(--ink3); padding: 5px 8px; text-align: left; }
+  .efo-ref td { padding: 5px 8px; font-size: 12.5px; border-top: 1px solid #C6F6D5; }
+  .efo-ref td:nth-child(2), .efo-ref td:nth-child(3) { font-family: 'Fira Code', monospace; text-align: right; }
+  .efo-ref tr.active-row td { background: rgba(39,103,73,0.1); font-weight: 600; }
+
+  #results { display: none; }
+  #results.visible { display: block; }
+
+  .recommendation {
+    border-radius: 18px; padding: 22px 26px; margin-bottom: 24px;
+    display: flex; align-items: flex-start; gap: 16px; animation: slideIn 0.4s ease;
+  }
+  @keyframes slideIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+  .recommendation.best-munkaber { background: #FEF3EC; border-left: 4px solid var(--accent); }
+  .recommendation.best-megbizas { background: #EBF4FF; border-left: 4px solid var(--accent2); }
+  .recommendation.best-efo      { background: #F0FFF4; border-left: 4px solid var(--accent3); }
+  .rec-icon { font-size: 26px; flex-shrink: 0; margin-top: 2px; }
+  .rec-title { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 17px; font-weight: 700; margin-bottom: 5px; }
+  .rec-text { font-size: 13px; color: var(--ink2); line-height: 1.65; }
+
+  .cards-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 24px; }
+  @media (max-width: 800px) { .cards-grid { grid-template-columns: 1fr; } }
+
+  .result-card {
+    background: var(--card); border: 1.5px solid var(--border); border-radius: 18px; padding: 22px;
+    animation: slideIn 0.4s ease; position: relative; overflow: hidden;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .result-card:hover { transform: translateY(-2px); box-shadow: 0 8px 30px var(--shadow); }
+  .result-card.winner::after {
+    content: '✓ LEGJOBB'; position: absolute; top: 12px; right: 12px;
+    font-family: 'Fira Code', monospace; font-size: 9px; letter-spacing: 1.5px;
+    padding: 3px 8px; border-radius: 6px; font-weight: 500;
+  }
+  .card-munkaber { color: var(--accent); }
+  .card-munkaber.winner { background: #FEF9F6; border-color: var(--accent); }
+  .card-munkaber.winner::after { background: var(--accent); color: white; }
+  .card-megbizas { color: var(--accent2); }
+  .card-megbizas.winner { background: #F0F7FF; border-color: var(--accent2); }
+  .card-megbizas.winner::after { background: var(--accent2); color: white; }
+  .card-efo { color: var(--accent3); }
+  .card-efo.winner { background: #F0FFF6; border-color: var(--accent3); }
+  .card-efo.winner::after { background: var(--accent3); color: white; }
+
+  .card-type { font-family: 'Fira Code', monospace; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; opacity: 0.7; margin-bottom: 6px; color: currentColor; }
+  .card-title { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 16px; font-weight: 700; color: var(--ink); margin-bottom: 16px; }
+  .card-metric { margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
+  .card-metric:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+  .metric-label { font-size: 11px; color: var(--ink3); margin-bottom: 2px; }
+  .metric-value { font-family: 'Fira Code', monospace; font-size: 14px; font-weight: 500; color: var(--ink); }
+  .metric-value.highlight { font-size: 20px; color: currentColor; }
+  .metric-value.warn { color: #E53E3E; font-size: 13px; }
+  .metric-value.muted { color: var(--ink3); font-style: italic; font-size: 12px; }
+
+  .chart-section {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 18px; padding: 26px; margin-bottom: 24px;
+    animation: slideIn 0.4s ease 0.15s both;
+  }
+  .chart-section h3 { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 15px; font-weight: 700; margin-bottom: 20px; }
+  .chart-bars { display: flex; flex-direction: column; gap: 12px; }
+  .bar-row { display: flex; align-items: center; gap: 10px; }
+  .bar-label { font-size: 12.5px; color: var(--ink2); width: 145px; flex-shrink: 0; font-weight: 500; }
+  .bar-track { flex: 1; height: 34px; background: var(--bg2); border-radius: 6px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 6px; transition: width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1); display: flex; align-items: center; padding-left: 10px; width: 0; }
+  .bar-fill span { font-family: 'Fira Code', monospace; font-size: 11px; color: white; white-space: nowrap; }
+  .bar-val { font-family: 'Fira Code', monospace; font-size: 12px; color: var(--ink); width: 105px; text-align: right; flex-shrink: 0; }
+  .bar-munkaber .bar-fill { background: var(--accent); }
+  .bar-megbizas .bar-fill { background: var(--accent2); }
+  .bar-efo .bar-fill { background: var(--accent3); }
+
+  .table-section {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 18px; overflow: hidden; margin-bottom: 24px;
+    animation: slideIn 0.4s ease 0.1s both;
+  }
+  .table-header { padding: 18px 22px; border-bottom: 1px solid var(--border); }
+  .table-header h3 { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 15px; font-weight: 700; }
+  table.main-table { width: 100%; border-collapse: collapse; }
+  table.main-table th { background: var(--bg); padding: 10px 16px; text-align: left; font-family: 'Fira Code', monospace; font-size: 10px; letter-spacing: 1px; text-transform: uppercase; color: var(--ink3); font-weight: 500; }
+  table.main-table td { padding: 11px 16px; font-size: 13px; border-top: 1px solid var(--border); }
+  table.main-table tr:hover td { background: var(--bg2); }
+  table.main-table td.rl { font-weight: 500; color: var(--ink2); }
+  table.main-table td.num { font-family: 'Fira Code', monospace; font-size: 12px; text-align: right; }
+  table.main-table tr.tr { }
+  table.main-table tr.tr td { background: var(--bg); font-weight: 600; font-family: 'Fira Code', monospace; }
+
+  .notes-section {
+    background: var(--bg2); border-radius: 18px; padding: 18px 22px;
+    animation: slideIn 0.4s ease 0.2s both;
+  }
+  .notes-section h4 { font-family: 'Fira Code', monospace; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--ink3); margin-bottom: 10px; }
+  .notes-section li { font-size: 12.5px; color: var(--ink2); line-height: 1.7; margin-bottom: 2px; }
+  .notes-section ul { padding-left: 16px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-badge">2026 · SukorADÓ Kalkulátor</div>
+  <h1>Foglalkoztatási Forma<br>Összehasonlító</h1>
+  <p>Munkabér · Megbízási szerződés · Egyszerűsített foglalkoztatás (EFO)</p>
+  <div class="header-credit">
+    <div class="header-credit-logo">SukorADÓ <span>könyvelőiroda</span></div>
+    <div class="header-credit-sep">·</div>
+    <div class="header-credit-name">Készítette: <strong>Váróci Ágnes</strong></div>
+  </div>
+</header>
+
+<main>
+  <div class="input-section">
+    <div class="section-label">Kiindulópont — nettó kézhez kapott összeg</div>
+    <div class="input-grid">
+      <div class="field">
+        <label>Nettó összeg (Ft/hó)</label>
+        <div class="input-suffix">
+          <input type="number" id="nettoInput" value="400000" min="1000" step="1000">
+          <span>Ft</span>
+        </div>
+      </div>
+      <div class="field">
+        <label>Cég adózása</label>
+        <select id="cegAdozas">
+          <option value="tao">TAO — 13% szochó</option>
+          <option value="kiva">KIVA — 10% KIVA</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Munkavállaló státusza</label>
+        <select id="munkavStatusz">
+          <option value="normal">Általános (SZJA + TB)</option>
+          <option value="nyugdijas">Nyugdíjas (csak SZJA)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Megbízás típusa</label>
+        <select id="megbizasTipus">
+          <option value="eseti">Eseti megbízás</option>
+          <option value="tartos">Tartós megbízás (Tbj. bej.)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>EFO típusa</label>
+        <select id="efoType" onchange="updateEfoRef()">
+          <option value="alkalmi">Alkalmi munka</option>
+          <option value="turisztikai">Turisztikai idénymunka</option>
+          <option value="mezogazd">Mezőgazd. idénymunka (0-120 nap)</option>
+          <option value="mezogazd2">Mezőgazd. idénymunka (121-210 nap)</option>
+          <option value="film">Filmipari statiszta</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Napok száma (EFO, max 15/hó)</label>
+        <div class="input-suffix">
+          <input type="number" id="napokInput" value="15" min="1" max="15">
+          <span>nap</span>
+        </div>
+      </div>
+      <div class="field">
+        <label>&nbsp;</label>
+        <button class="calc-btn" onclick="calculate()">Kiszámít →</button>
+      </div>
+    </div>
+
+    <!-- EFO referencia táblázat -->
+    <div class="efo-ref">
+      <div class="efo-ref-title">📊 2026-os EFO Adatok — SukorADÓ adatbázis alapján · minimálbér: 322 800 Ft/hó</div>
+      <table id="efoRefTable">
+        <thead>
+          <tr>
+            <th>EFO fajtája</th>
+            <th style="text-align:right">Napi bér (min.)</th>
+            <th style="text-align:right">Munkáltatói közteher/nap</th>
+          </tr>
+        </thead>
+        <tbody id="efoRefBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div id="results">
+    <div id="recommendation" class="recommendation"></div>
+
+    <div class="cards-grid">
+      <div class="result-card card-munkaber" id="card-munkaber">
+        <div class="card-type">01 · Munkabér</div>
+        <div class="card-title">Hagyományos alkalmazott</div>
+        <div id="munkaber-metrics"></div>
+      </div>
+      <div class="result-card card-megbizas" id="card-megbizas">
+        <div class="card-type">02 · Megbízás</div>
+        <div class="card-title">Megbízási szerződés</div>
+        <div id="megbizas-metrics"></div>
+      </div>
+      <div class="result-card card-efo" id="card-efo">
+        <div class="card-type">03 · EFO</div>
+        <div class="card-title">Egyszerűsített foglalkoztatás</div>
+        <div id="efo-metrics"></div>
+      </div>
+    </div>
+
+    <div class="chart-section">
+      <h3>Munkáltatói összkölteség összehasonlítása</h3>
+      <div class="chart-bars" id="chartBars"></div>
+    </div>
+
+    <div class="table-section">
+      <div class="table-header"><h3>Részletes járulékbontás</h3></div>
+      <div style="overflow-x:auto">
+        <table class="main-table">
+          <thead>
+            <tr>
+              <th>Tétel</th>
+              <th style="text-align:right">Munkabér</th>
+              <th style="text-align:right">Megbízás</th>
+              <th style="text-align:right" id="efoColHeader">EFO</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="notes-section">
+      <h4>Fontos tudnivalók · 2026</h4>
+      <ul>
+        <li><strong>EFO korlátok (1 magánszemély):</strong> max 120 nap/év | max egybefüggő 5 nap | max havi 15 nap</li>
+        <li><strong>Mentesített keretösszeg</strong> (dolgozó nem vall be, ha alatta van): Szakképesítést NEM igénylő: <strong>19 305 Ft/nap</strong> (min.bér × 130%) | Szakképesítést igénylő: <strong>22 308 Ft/nap</strong> (gar.bérmin. × 130%)</li>
+        <li><strong>Max kifizetható napi bér EFO-nál:</strong> 29 700 Ft/nap/fő (min.bér napi × 2 = 10 760 Ft × 2)</li>
+        <li><strong>Létszámkorlát:</strong> 1-5 fős cég: max 2 fő/nap | 6-20 fős: max 4 fő/nap | 20+ fős: létszám × 20% — Filmipari statisztánál nem vonatkozik!</li>
+        <li><strong>Megbízásnál</strong> biztosított megbízottat feltételez (nincs más TB-köteles jogviszonya). Ha nem biztosított, a TB-teher is változhat.</li>
+        <li><strong>10%-os költségátalány</strong> érvényesíthető megbízásnál az SZJA-alap csökkentésére</li>
+        <li><strong>Új 2026.01.01-től:</strong> Tartós megbízási jogviszony új fogalma. Mezőgazd. idénymunkánál a 120 nap + 90 nappal meghosszabbítható.</li>
+      </ul>
+    </div>
+  </div>
+</main>
+
+<script>
+// 2026-os adatok — SukorADÓ adatbázis alapján
+const TAX = { szja: 0.15, munkavTB: 0.185, szocho: 0.13, kiva: 0.10, koltsegalany: 0.10 };
+
+// EFO adatok 2026: minimálbér 322 800 Ft/hó, napi: 10 760 Ft
+const EFO = {
+  alkalmi:    { label: 'Alkalmi munka',                    napiBer: 4800,  kozteher: 13600 },
+  turisztikai:{ label: 'Turisztikai idénymunka',           napiBer: 2400,  kozteher: 6800  },
+  mezogazd:   { label: 'Mezőgazd. idénymunka (0-120 nap)', napiBer: 2400,  kozteher: 6800  },
+  mezogazd2:  { label: 'Mezőgazd. idénymunka (121-210)',   napiBer: 3600,  kozteher: 10200 },
+  film:       { label: 'Filmipari statiszta',              napiBer: 9700,  kozteher: 27100 },
+};
+
+function fmt(n) { return Math.round(n).toLocaleString('hu-HU') + ' Ft'; }
+function fmtN(n) { return Math.round(n).toLocaleString('hu-HU'); }
+
+function updateEfoRef() {
+  const sel = document.getElementById('efoType').value;
+  const tbody = document.getElementById('efoRefBody');
+  tbody.innerHTML = Object.entries(EFO).map(([k, v]) =>
+    `<tr class="${k === sel ? 'active-row' : ''}">
+      <td>${v.label}</td>
+      <td>${fmtN(v.napiBer)} Ft/nap</td>
+      <td>${fmtN(v.kozteher)} Ft/nap</td>
+    </tr>`
+  ).join('');
+}
+
+const MINBER_HAVI = 322800;
+const JARULEK_ALAP_MIN = MINBER_HAVI * 0.30; // 96 840 Ft
+
+function calcMunkaber(netto, munkaltadiRat, munkavTBRat) {
+  // Normál esetben: bruttó = nettó / (1 - TB - SZJA)
+  let brutto = netto / (1 - munkavTBRat - TAX.szja);
+  let jarulek_alap = brutto;
+  let jarulekAlapMinAlkalmaz = false;
+
+  // Ha a bruttó < minimálbér 30% (és van TB = nem nyugdíjas),
+  // akkor a járulékokat legalább a minimum alap után kell fizetni.
+  // Ilyenkor: nettó = bruttó - (min_alap × TB) - (min_alap × SZJA)
+  // → bruttó = nettó + min_alap × (TB + SZJA)
+  if (munkavTBRat > 0 && brutto < JARULEK_ALAP_MIN) {
+    brutto = netto + JARULEK_ALAP_MIN * (munkavTBRat + TAX.szja);
+    jarulek_alap = JARULEK_ALAP_MIN;
+    jarulekAlapMinAlkalmaz = true;
+  }
+
+  const szja = jarulek_alap * TAX.szja;
+  const tb = jarulek_alap * munkavTBRat;
+  const munkaltAdo = jarulek_alap * munkaltadiRat;
+  return { brutto, jarulek_alap, szja, tb, munkaltAdo, munkaltOssz: brutto + munkaltAdo, netto, jarulekAlapMinAlkalmaz };
+}
+
+function calcMegbizas(netto, munkaltadiRat, munkavTBRat, tartos) {
+  // Biztosított-e?
+  // - Tartós megbízás: mindig biztosított, min. járulékalap = minimálbér 30%
+  // - Eseti: csak ha díj >= minimálbér 30%
+  // - Nyugdíjas (munkavTBRat=0): soha nem biztosított TB szempontjából
+
+  let dij, tb, munkaltAdo, jarulek_alap, nemBiztositott, tartosBiztAlkalmaz = false;
+
+  if (munkavTBRat === 0) {
+    // Nyugdíjas: csak SZJA, nincs TB, nincs munkáltatói
+    dij = netto / (1 - (1 - TAX.koltsegalany) * TAX.szja);
+    tb = 0;
+    munkaltAdo = 0;
+    jarulek_alap = dij;
+    nemBiztositott = true;
+  } else if (tartos) {
+    // Tartós megbízás: mindig biztosított, járulékalap min. 96 840 Ft
+    // Először próbáljuk normál visszaszámítással
+    const dijNormal = netto / (1 - munkavTBRat - (1 - TAX.koltsegalany) * TAX.szja);
+    if (dijNormal < JARULEK_ALAP_MIN) {
+      // A járulékokat a minimum alap után kell fizetni
+      // nettó = díj - (min_alap × TB) - (min_alap × SZJA_alap_rát)
+      const szjaRat = (1 - TAX.koltsegalany) * TAX.szja;
+      dij = netto + JARULEK_ALAP_MIN * (munkavTBRat + szjaRat);
+      jarulek_alap = JARULEK_ALAP_MIN;
+      tartosBiztAlkalmaz = true;
+    } else {
+      dij = dijNormal;
+      jarulek_alap = dij;
+    }
+    tb = jarulek_alap * munkavTBRat;
+    munkaltAdo = jarulek_alap * munkaltadiRat;
+    nemBiztositott = false;
+  } else {
+    // Eseti: biztosított csak ha díj >= 96 840 Ft
+    const dijBizt = netto / (1 - munkavTBRat - (1 - TAX.koltsegalany) * TAX.szja);
+    if (dijBizt < JARULEK_ALAP_MIN) {
+      dij = netto / (1 - (1 - TAX.koltsegalany) * TAX.szja);
+      tb = 0;
+      munkaltAdo = 0;
+      jarulek_alap = dij;
+      nemBiztositott = true;
+    } else {
+      dij = dijBizt;
+      jarulek_alap = dij;
+      tb = dij * munkavTBRat;
+      munkaltAdo = dij * munkaltadiRat;
+      nemBiztositott = false;
+    }
+  }
+
+  const szja = jarulek_alap * (1 - TAX.koltsegalany) * TAX.szja;
+  return { brutto: dij, jarulek_alap, szja, tb, munkaltAdo, munkaltOssz: dij + munkaltAdo, netto, nemBiztositott, tartosBiztAlkalmaz };
+}
+
+function calcEfo(netto, napok, efoKey) {
+  const efo = EFO[efoKey];
+  const kozteher = efo.kozteher * napok;
+  const napiKif = netto / napok;
+
+  // Mentesített keretösszeg: szakképesítést nem igénylő = 19 305 Ft/nap, igénylő = 22 308 Ft/nap
+  const mentesitettNemKepzett = 19305; // minimálbér × 130%
+  const mentesitettKepzett    = 22308; // gar.bérmin. × 130%
+  const mentesitettOsszNemKepzett = mentesitettNemKepzett * napok;
+  const mentesitettOsszKepzett    = mentesitettKepzett    * napok;
+
+  // SZJA számítása ha meghaladja a mentesített keretet
+  const tullepesNemKepzett = Math.max(0, netto - mentesitettOsszNemKepzett);
+  const tullepesKepzett    = Math.max(0, netto - mentesitettOsszKepzett);
+  const szjaNemKepzett = tullepesNemKepzett * 0.15;
+  const szjaKepzett    = tullepesKepzett    * 0.15;
+
+  return {
+    label: efo.label, napiBer: efo.napiBer, kozteherPerNap: efo.kozteher,
+    napiKif, napok, kozteher, munkaltOssz: netto + kozteher, netto,
+    mentesitettNapNemKepzett: mentesitettNemKepzett,
+    mentesitettNapKepzett:    mentesitettKepzett,
+    mentesitettOsszNemKepzett, mentesitettOsszKepzett,
+    tullepesNemKepzett, tullepesKepzett,
+    szjaNemKepzett, szjaKepzett,
+    mentesitettAtlepve: netto > mentesitettOsszNemKepzett,
+  };
+}
+
+function calculate() {
+  const netto = parseFloat(document.getElementById('nettoInput').value) || 0;
+  const napok = parseInt(document.getElementById('napokInput').value) || 15;
+  const efoKey = document.getElementById('efoType').value;
+  const cegAdozas = document.getElementById('cegAdozas').value;
+  const isKiva = cegAdozas === 'kiva';
+  const isNyugdijas = document.getElementById('munkavStatusz').value === 'nyugdijas';
+  const isTartos = document.getElementById('megbizasTipus').value === 'tartos';
+  const munkaltadiRat = (isKiva && !isNyugdijas) ? TAX.kiva : (!isNyugdijas ? TAX.szocho : 0);
+  const munkaltadiLabel = isNyugdijas ? 'Munkáltatói járulék (nyugdíjas: mentes)' : (isKiva ? 'KIVA (10%)' : 'Szochó (13%)');
+  const munkavTBRat = isNyugdijas ? 0 : TAX.munkavTB;
+
+  if (netto < 1000) { alert('Legalább 1 000 Ft-ot adjon meg!'); return; }
+
+  const m = calcMunkaber(netto, munkaltadiRat, munkavTBRat);
+  const mb = calcMegbizas(netto, munkaltadiRat, munkavTBRat, isTartos);
+  const e = calcEfo(netto, napok, efoKey);
+
+  const costs = [
+    { key: 'munkaber', label: 'Munkabér', cost: m.munkaltOssz },
+    { key: 'megbizas', label: 'Megbízás', cost: mb.munkaltOssz },
+    { key: 'efo',      label: 'EFO',      cost: e.munkaltOssz },
+  ].sort((a, b) => a.cost - b.cost);
+  const winner = costs[0].key;
+
+  document.querySelector('#card-megbizas .card-title').textContent = isTartos ? 'Tartós megbízás (Tbj.)' : 'Megbízási szerződés';
+  document.querySelector('#card-megbizas .card-type').textContent = isTartos ? '02 · Tartós megbízás' : '02 · Megbízás';
+
+  // Kártyák
+  ['munkaber', 'megbizas'].forEach(t => {
+    const data = t === 'munkaber' ? m : mb;
+    document.getElementById('card-' + t).classList.toggle('winner', winner === t);
+
+    let sorok = [];
+
+    if (t === 'munkaber') {
+      const jarulekAlapSor = m.jarulekAlapMinAlkalmaz
+        ? [{ l: '⚠️ Járulékalap (min. 30% = ' + fmt(JARULEK_ALAP_MIN) + ')', v: fmt(m.jarulek_alap), w: true }]
+        : [];
+      const tbSor = isNyugdijas
+        ? { l: 'Munkavállaló TB járulék', v: '— (nyugdíjas, mentes)' }
+        : { l: 'Munkavállaló TB járulék (18,5%)', v: '– ' + fmt(data.tb) };
+      sorok = [
+        { l: 'Bruttó bér', v: fmt(data.brutto) },
+        ...jarulekAlapSor,
+        { l: 'Munkavállaló SZJA (15%)', v: '– ' + fmt(data.szja) },
+        tbSor,
+        { l: 'Nettó kézhez', v: fmt(netto), h: true },
+        { l: 'Munkáltatói ' + (isNyugdijas ? 'járulék' : munkaltadiLabel), v: isNyugdijas ? '— (nyugdíjas, mentes)' : fmt(data.munkaltAdo) },
+        { l: 'Munkáltató összköltsége', v: fmt(data.munkaltOssz) },
+      ];
+    } else {
+      // Megbízás
+      let biztStatusz;
+      if (isNyugdijas) {
+        biztStatusz = { l: 'Biztosítási jogviszony', v: '— (nyugdíjas, mentes)' };
+      } else if (isTartos) {
+        biztStatusz = { l: 'Megbízás típusa', v: '✓ Tartós megbízás (Tbj. bej.) — folyamatos biztosított' };
+      } else if (mb.nemBiztositott) {
+        biztStatusz = { l: 'Biztosítási jogviszony', v: '✗ Nem biztosított (díj < ' + fmt(JARULEK_ALAP_MIN) + ')', w: true };
+      } else {
+        biztStatusz = { l: 'Biztosítási jogviszony', v: '✓ Biztosított' };
+      }
+
+      const tartosSor = mb.tartosBiztAlkalmaz
+        ? [{ l: '⚠️ Járulékalap (min. 30% = ' + fmt(JARULEK_ALAP_MIN) + ')', v: fmt(mb.jarulek_alap), w: true }]
+        : [];
+
+      const tbSor = mb.nemBiztositott
+        ? { l: 'Munkavállaló TB járulék', v: '— (nem biztosított)' }
+        : { l: 'Munkavállaló TB járulék (18,5%)', v: '– ' + fmt(data.tb) };
+      const munkaltSor = mb.nemBiztositott
+        ? { l: 'Munkáltatói járulék', v: '— (nem biztosított)' }
+        : { l: 'Munkáltatói ' + munkaltadiLabel, v: fmt(data.munkaltAdo) };
+      sorok = [
+        { l: 'Megbízási díj (bruttó)', v: fmt(data.brutto) },
+        biztStatusz,
+        ...tartosSor,
+        { l: 'Munkavállaló SZJA (90% × 15%)', v: '– ' + fmt(data.szja) },
+        tbSor,
+        { l: 'Nettó kézhez', v: fmt(netto), h: true },
+        munkaltSor,
+        { l: 'Munkáltató összköltsége', v: fmt(data.munkaltOssz) },
+      ];
+    }
+
+    document.getElementById(t + '-metrics').innerHTML = sorok
+      .map(r => `<div class="card-metric"><div class="metric-label">${r.l}</div><div class="metric-value${r.h?' highlight':''}${r.muted?' muted':''}${r.w?' warn':''}">${r.v}</div></div>`)
+      .join('');
+  });
+
+  // EFO kártya
+  document.getElementById('card-efo').classList.toggle('winner', winner === 'efo');
+  const napMaxWarn = e.napiKif > 29700;
+
+  let efoRows = [
+    { l: 'EFO típusa', v: e.label },
+    { l: 'Minimálisan járó napi bér (EFO)', v: fmt(e.napiBer) + '/nap' },
+    { l: 'Ténylegesen kifizetett napi', v: fmt(e.napiKif) + '/nap' + (napMaxWarn ? ' ⚠️' : ''), c: napMaxWarn ? 'warn' : '' },
+    { l: 'Nettó kézhez (' + napok + ' nap)', v: fmt(netto), h: true },
+    { l: 'Közteher/nap × ' + napok + ' nap', v: fmtN(e.kozteherPerNap) + ' × ' + napok + ' = ' + fmt(e.kozteher) },
+    { l: 'Munkáltató összköltsége', v: fmt(e.munkaltOssz) },
+  ];
+  document.getElementById('efo-metrics').innerHTML = efoRows.map(r =>
+    `<div class="card-metric"><div class="metric-label">${r.l}</div><div class="metric-value${r.h?' highlight':''} ${r.c||''}">${r.v}</div></div>`
+  ).join('');
+
+  if (napMaxWarn) {
+    document.getElementById('efo-metrics').innerHTML += '<div style="background:#FED7D7;border-radius:6px;padding:8px 10px;font-size:11.5px;color:#C53030;margin-top:8px;">⚠️ A kifizetett napi bér meghaladja a max. 29 700 Ft/nap korlátot!</div>';
+  }
+
+  // Mentesített keretösszeg tájékoztató SZJA
+  if (e.mentesitettAtlepve) {
+    const szjaInfoHtml = `
+      <div style="background:#FFFBEB;border:1px solid #F6C90E;border-radius:8px;padding:12px 14px;margin-top:10px;font-size:12px;color:#7A5F00;">
+        <div style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;color:#B45309;">
+          ⚠️ Tájékoztató — Mentesített keret átlépve
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 16px;margin-bottom:8px;">
+          <div style="font-size:11px;color:#92400E;font-weight:600;">Szakképesítést NEM igénylő</div>
+          <div style="font-size:11px;color:#92400E;font-weight:600;">Szakképesítést igénylő</div>
+          <div>Mentesített: <strong>${fmt(e.mentesitettOsszNemKepzett)}</strong><br>(${fmtN(e.mentesitettNapNemKepzett)} Ft/nap × ${napok} nap)</div>
+          <div>Mentesített: <strong>${fmt(e.mentesitettOsszKepzett)}</strong><br>(${fmtN(e.mentesitettNapKepzett)} Ft/nap × ${napok} nap)</div>
+          <div>Keret felett: <strong>${fmt(e.tullepesNemKepzett)}</strong></div>
+          <div>Keret felett: <strong>${e.tullepesKepzett > 0 ? fmt(e.tullepesKepzett) : '—'}</strong></div>
+          <div style="color:#C53030;font-weight:700;">Fizetendő SZJA (15%): ${fmt(e.szjaNemKepzett)}</div>
+          <div style="color:${e.szjaKepzett > 0 ? '#C53030' : '#276749'};font-weight:700;">Fizetendő SZJA (15%): ${e.szjaKepzett > 0 ? fmt(e.szjaKepzett) : '0 Ft ✓'}</div>
+        </div>
+        <div style="font-size:11px;border-top:1px solid #F6C90E;padding-top:7px;color:#92400E;">
+          A dolgozónak SZJA-bevallást kell benyújtania és adót fizetnie a mentesített keret feletti összeg után.
+        </div>
+      </div>`;
+    document.getElementById('efo-metrics').innerHTML += szjaInfoHtml;
+  } else {
+    document.getElementById('efo-metrics').innerHTML += `
+      <div style="background:#F0FFF4;border:1px solid #9AE6B4;border-radius:8px;padding:10px 14px;margin-top:10px;font-size:12px;color:#276749;">
+        ✓ <strong>Mentesített kereten belül</strong> — a dolgozónak nem kell SZJA-t fizetnie és bevallást benyújtania.<br>
+        <span style="font-size:11px;opacity:0.8;">Nem képzett: max ${fmt(e.mentesitettOsszNemKepzett)} | Képzett: max ${fmt(e.mentesitettOsszKepzett)}</span>
+      </div>`;
+  }
+
+  // Ajánlás
+  const megtakaritas = costs[1].cost - costs[0].cost;
+  const recEl = document.getElementById('recommendation');
+  const recData = {
+    munkaber: { icon: '💼', title: 'Munkabér a leggazdaságosabb', text: `Ennél a nettó szintnél és EFO típusnál (${e.label}) a hagyományos munkabér kerül a legkevesebbe a munkáltatónak.` },
+    megbizas: { icon: '📋', title: 'Megbízás a leggazdaságosabb', text: `A 10%-os költségátalánynak köszönhetően a megbízási forma most olcsóbb. Ha a megbízott nem biztosított (más főállása van), az SZJA-alap is tovább csökkenhet.` },
+    efo:      { icon: '⚡', title: 'EFO a leggazdaságosabb', text: `${e.label} esetén a munkáltatói közteher ${fmt(e.kozteher)} (${napok} nap × ${fmtN(e.kozteherPerNap)} Ft). Ez a legolcsóbb, de max 15 nap/hó és 120 nap/év korlátot figyeljen!` },
+  }[winner];
+  recEl.className = 'recommendation best-' + winner;
+  recEl.innerHTML = `<div class="rec-icon">${recData.icon}</div><div>
+    <div class="rec-title">${recData.title}</div>
+    <div class="rec-text">${recData.text}<br><br>
+      <strong>Megtakarítás a 2. legolcsóbbhoz képest: ${fmt(megtakaritas)}/hó</strong><br>
+      Sorrend: ${costs.map((c,i) => `${i+1}. ${c.label} (${fmt(c.cost)})`).join(' → ')}
+    </div></div>`;
+
+  // Grafikon
+  const chartEl = document.getElementById('chartBars');
+  const maxCost = Math.max(...costs.map(c => c.cost));
+  chartEl.innerHTML = [...costs].sort((a,b)=>b.cost-a.cost).map(c => `
+    <div class="bar-row bar-${c.key}">
+      <div class="bar-label">${c.label}</div>
+      <div class="bar-track"><div class="bar-fill" data-w="${(c.cost/maxCost*100).toFixed(1)}"><span>${fmt(c.cost)}</span></div></div>
+      <div class="bar-val">${fmt(c.cost)}</div>
+    </div>`).join('');
+  requestAnimationFrame(() => chartEl.querySelectorAll('.bar-fill').forEach(b => b.style.width = b.dataset.w + '%'));
+
+  // Táblázat
+  const tbLabel = isNyugdijas ? '— TB járulék (nyugdíjas: mentes)' : '— Munkavállaló TB járulék (18,5%)';
+  const mbTbVal = mb.nemBiztositott ? null : (isNyugdijas ? 0 : -mb.tb);
+  const mbMunkaltVal = mb.nemBiztositott ? null : mb.munkaltAdo;
+  const jarulekAlapSorTabla = m.jarulekAlapMinAlkalmaz
+    ? [{ l: '⚠️ Járulékalap min. (30% = ' + fmt(JARULEK_ALAP_MIN) + ')', m: m.jarulek_alap, mb: null, e: null, info: true }]
+    : [];
+  const megbizasNemBiztInfo = mb.nemBiztositott
+    ? [{ l: 'ℹ️ Megbízás: nem biztosított (díj < ' + fmt(JARULEK_ALAP_MIN) + ')', m: null, mb: null, e: null, info2: true }]
+    : [];
+  const tableRows = [
+    { l: 'Bruttó bér / megbízási díj / nettó bér', m: m.brutto, mb: mb.brutto, e: e.netto },
+    ...jarulekAlapSorTabla,
+    ...megbizasNemBiztInfo,
+    { l: '— Munkavállaló SZJA',                    m: -m.szja,  mb: -mb.szja,  e: 0 },
+    { l: tbLabel,                                   m: isNyugdijas ? 0 : -m.tb, mb: mbTbVal, e: 0 },
+    { l: '= Nettó kézhez',                          m: netto,    mb: netto,     e: netto, t: true },
+    { l: '+ Munkáltatói járulék / EFO közteher',   m: m.munkaltAdo, mb: mbMunkaltVal, e: e.kozteher },
+    { l: '= Munkáltató összköltsége',               m: m.munkaltOssz, mb: mb.munkaltOssz, e: e.munkaltOssz, t: true },
+    { l: 'Hatékonyság (nettó / összkölts.)',        m: null, mb: null, e: null, pct: true,
+      mP: netto/m.munkaltOssz, mbP: netto/mb.munkaltOssz, eP: netto/e.munkaltOssz },
+  ];
+  document.getElementById('tableBody').innerHTML = tableRows.map(r => {
+    const tc = r.t ? ' class="tr"' : r.info ? ' style="background:#FFF5F5"' : r.info2 ? ' style="background:#EBF8FF"' : '';
+    const dc = r.t ? ' tr' : '';
+    if (r.pct) return `<tr${tc}><td class="rl${dc}">${r.l}</td><td class="num${dc}">${(r.mP*100).toFixed(1)}%</td><td class="num${dc}">${(r.mbP*100).toFixed(1)}%</td><td class="num${dc}">${(r.eP*100).toFixed(1)}%</td></tr>`;
+    const f = v => v === null ? '<span style="color:#718096;font-style:italic;font-size:11px">—</span>' : v < 0 ? `<span style="color:var(--accent)">– ${fmt(Math.abs(v))}</span>` : v === 0 ? '—' : fmt(v);
+    return `<tr${tc}><td class="rl${dc}">${r.l}</td><td class="num${dc}" style="${r.info?'color:#C53030;font-weight:600':''}">${f(r.m)}</td><td class="num${dc}" style="${r.info2?'color:#2B6CB0;font-size:11px':''}colspan="${r.info2?3:1}">${f(r.mb)}</td><td class="num${dc}">${f(r.e)}</td></tr>`;
+  }).join('');
+
+  document.getElementById('results').classList.add('visible');
+  setTimeout(() => document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+}
+
+// Init
+updateEfoRef();
+window.addEventListener('load', calculate);
+</script>
+</body>
+</html>
