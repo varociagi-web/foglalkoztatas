@@ -298,8 +298,8 @@
         <thead>
           <tr>
             <th>EFO fajtája</th>
-            <th style="text-align:right">Napi bér (min.)</th>
             <th style="text-align:right">Munkáltatói közteher/nap</th>
+            <th style="text-align:right">Min. kifizetendő napi bér</th>
           </tr>
         </thead>
         <tbody id="efoRefBody"></tbody>
@@ -415,11 +415,11 @@ const TAX = { szja: 0.15, munkavTB: 0.185, szocho: 0.13, kiva: 0.10, koltsegalan
 
 // EFO adatok 2026: minimálbér 322 800 Ft/hó, napi: 10 760 Ft
 const EFO = {
-  alkalmi:    { label: 'Alkalmi munka',                    napiBer: 4800,  kozteher: 13600 },
-  turisztikai:{ label: 'Turisztikai idénymunka',           napiBer: 2400,  kozteher: 6800  },
-  mezogazd:   { label: 'Mezőgazd. idénymunka (0-120 nap)', napiBer: 2400,  kozteher: 6800  },
-  mezogazd2:  { label: 'Mezőgazd. idénymunka (121-210)',   napiBer: 3600,  kozteher: 10200 },
-  film:       { label: 'Filmipari statiszta',              napiBer: 9700,  kozteher: 27100 },
+  alkalmi:    { label: 'Alkalmi munka',                    napiBer: 13600, kozteher: 4800  },
+  turisztikai:{ label: 'Turisztikai idénymunka',           napiBer: 6800,  kozteher: 2400  },
+  mezogazd:   { label: 'Mezőgazd. idénymunka (0-120 nap)', napiBer: 6800,  kozteher: 2400  },
+  mezogazd2:  { label: 'Mezőgazd. idénymunka (121-210)',   napiBer: 10200, kozteher: 3600  },
+  film:       { label: 'Filmipari statiszta',              napiBer: 27100, kozteher: 9700  },
 };
 
 function fmt(n) { return Math.round(n).toLocaleString('hu-HU') + ' Ft'; }
@@ -431,8 +431,8 @@ function updateEfoRef() {
   tbody.innerHTML = Object.entries(EFO).map(([k, v]) =>
     `<tr class="${k === sel ? 'active-row' : ''}">
       <td>${v.label}</td>
-      <td>${fmtN(v.napiBer)} Ft/nap</td>
       <td>${fmtN(v.kozteher)} Ft/nap</td>
+      <td>${fmtN(v.napiBer)} Ft/nap</td>
     </tr>`
   ).join('');
 }
@@ -661,7 +661,7 @@ function calculate() {
 
   let efoRows = [
     { l: 'EFO típusa', v: e.label },
-    { l: 'Minimálisan járó napi bér (EFO)', v: fmt(e.napiBer) + '/nap' },
+    { l: 'Minimálisan kifizetendő napi bér', v: fmt(e.napiBer) + '/nap' },
     { l: 'Ténylegesen kifizetett napi', v: fmt(e.napiKif) + '/nap' + (napMaxWarn ? ' ⚠️' : ''), c: napMaxWarn ? 'warn' : '' },
     { l: 'Nettó kézhez (' + napok + ' nap)', v: fmt(netto), h: true },
     { l: 'Közteher/nap × ' + napok + ' nap', v: fmtN(e.kozteherPerNap) + ' × ' + napok + ' = ' + fmt(e.kozteher) },
